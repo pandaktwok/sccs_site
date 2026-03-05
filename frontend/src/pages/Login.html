@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Restricted Area Login - Cruzeiro do Sul</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec6d13",
+                        "background-light": "#f8f7f6",
+                        "background-dark": "#221810",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        body {
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen flex flex-col font-display">
+<header class="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+<div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="text-primary">
+<svg class="size-8" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"></path>
+</svg>
+</div>
+<span class="text-slate-900 dark:text-slate-100 text-xl font-bold tracking-tight">Cruzeiro do Sul</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-6 text-sm font-semibold text-slate-600 dark:text-slate-400">
+<a class="hover:text-primary transition-colors" href="#">Início</a>
+<a class="hover:text-primary transition-colors" href="#">Projetos</a>
+<a class="hover:text-primary transition-colors" href="#">Sobre Nós</a>
+</nav>
+<a class="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-full font-bold text-sm transition-all shadow-lg shadow-primary/20 flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-lg">volunteer_activism</span>
+                    Doar Agora
+                </a>
+</div>
+</div>
+</header>
+<main class="flex-grow flex flex-col lg:flex-row pt-20">
+<div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-primary/10">
+<div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCAp0tuZKV_C69_MauOfEVxeiSTqcIYOj9whh9qXYkc-fg-dwwaOUArR61fIBKkeQImB3UlfcIw9Q1tQE2nhLpqeoCybxEovl8PCiLu5SQ5cFLrwRKew2c8oZKttIb1Ovwh0OYeILLcTiF3DSzszLvBPwdxF41scUnOyhf07yKqvQUrXqRKLMk6PBuXfFZkeCCSe2UTVcwoLxkzGBqeiue8Ggcltby2ORAzSSC1DTisyaVPai4nMq8MRhQbIjdnf8YfdismR8iKyKU');"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark/80 to-transparent"></div>
+<div class="absolute bottom-12 left-12 right-12 text-slate-100">
+<h1 class="text-4xl font-bold mb-4">Empoderando a Cultura através da Música</h1>
+<p class="text-lg opacity-90 max-w-md">Junte-se à nossa comunidade de músicos e estudantes dedicados ao desenvolvimento artístico do Cruzeiro do Sul.</p>
+</div>
+</div>
+<div class="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 md:p-16 bg-white dark:bg-background-dark">
+<div class="w-full max-w-md">
+<div class="mb-10">
+<h3 class="text-slate-900 dark:text-slate-100 text-3xl font-extrabold mb-2">Área Restrita</h3>
+<p class="text-slate-500 dark:text-slate-400">Bem-vindo de volta. Por favor, acesse sua conta.</p>
+</div>
+<form class="space-y-6">
+<div>
+<label class="block text-slate-700 dark:text-slate-300 text-sm font-semibold mb-2">E-mail ou Usuário</label>
+<div class="relative">
+<input class="w-full px-4 py-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none placeholder:text-slate-400" placeholder="Digite seu e-mail ou usuário" type="text"/>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="block text-slate-700 dark:text-slate-300 text-sm font-semibold">Senha</label>
+</div>
+<div class="relative flex items-center">
+<input class="w-full px-4 py-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none placeholder:text-slate-400 pr-12" placeholder="Digite sua senha" type="password"/>
+<button class="absolute right-4 text-slate-400 hover:text-primary transition-colors" type="button">
+<span class="material-symbols-outlined">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<label class="flex items-center gap-2 cursor-pointer group">
+<input class="rounded text-primary focus:ring-primary border-slate-300" type="checkbox"/>
+<span class="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-200">Lembrar de mim</span>
+</label>
+<a class="text-sm font-semibold text-primary hover:underline" href="#">Esqueceu a senha?</a>
+</div>
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" type="submit">
+<span>Entrar</span>
+<span class="material-symbols-outlined text-lg">login</span>
+</button>
+</form>
+<div class="mt-12 text-center">
+<p class="text-slate-500 dark:text-slate-400">
+                        Ainda não tem uma conta? 
+                        <a class="text-primary font-bold hover:underline ml-1" href="#">Cadastre-se Agora</a>
+</p>
+</div>
+</div>
+</div>
+</main>
+<footer class="bg-slate-900 text-slate-300 py-12 px-4 border-t border-slate-800">
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+<div class="col-span-1 md:col-span-1">
+<div class="flex items-center gap-3 text-white mb-6">
+<div class="text-primary">
+<svg class="size-6" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M24 4C25.7818 14.2173 33.7827 22.2182 44 24C33.7827 25.7818 25.7818 33.7827 24 44C22.2182 33.7827 14.2173 25.7818 4 24C14.2173 22.2182 22.2182 14.2173 24 4Z" fill="currentColor"></path>
+</svg>
+</div>
+<span class="text-lg font-bold">Cruzeiro do Sul</span>
+</div>
+<p class="text-sm leading-relaxed opacity-70">Transformando vidas através da música e da cultura em nossa comunidade.</p>
+</div>
+<div>
+<h4 class="text-white font-bold mb-6">Links Rápidos</h4>
+<ul class="space-y-4 text-sm">
+<li><a class="hover:text-primary transition-colors" href="#">Transparência</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Relatórios Anuais</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Como Ajudar</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Nossos Parceiros</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold mb-6">Contato</h4>
+<ul class="space-y-4 text-sm">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">mail</span>
+                        contato@cruzeirodosul.org
+                    </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">phone</span>
+                        (11) 4002-8922
+                    </li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-sm">location_on</span>
+                        Av. Paulista, 1000 - SP
+                    </li>
+</ul>
+</div>
+<div>
+<h4 class="text-white font-bold mb-6">Siga-nos</h4>
+<div class="flex gap-4">
+<a class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">share</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">camera</span>
+</a>
+<a class="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl">public</span>
+</a>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto mt-12 pt-8 border-t border-slate-800 text-center text-xs opacity-50">
+<p>© 2024 Cruzeiro do Sul. Todos os direitos reservados. CNPJ: 00.000.000/0001-00</p>
+</div>
+</footer>
+
+</body></html>

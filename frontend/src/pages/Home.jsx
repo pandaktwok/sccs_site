@@ -7,6 +7,46 @@ export default function Home() {
     const carouselRef = useRef(null);
     const scrollInterval = useRef(null);
     const [isHoveringCarousel, setIsHoveringCarousel] = useState(false);
+    const [activeProjectIndex, setActiveProjectIndex] = useState(0);
+
+    const projectsData = [
+        {
+            id: 1,
+            tag: "Treinamento Orquestral",
+            title: "Sopros e Percussão Jovem",
+            status: "Início Flexível",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAhysACTL1JzRViWs-2RTPLgrfnC7sahn5s8edpvicLUw5NrU9lKoF8DOGDkpYCC0HZb4-MNlZZ6S8mgyRrrzr1PFu2UlxmmNpZGT4d9VPa3mYAAXzKrwuvvN5qo7OpVge63IscAXHl3I6j9SR8RhgNpfLJ6zArCkVYNkLWvfDFyxMZXf5JU5IZj7mJXk7ncWVNsceDQ09d1_q3NSGcBGzReJnxIry3D7sBfqqa8fze5GcdhfcHdWDQFyu3tBRrqC3K-GN5gsPXL0Y"
+        },
+        {
+            id: 2,
+            tag: "Brasileiro Tradicional",
+            title: "Conjunto de Choro Sênior",
+            status: "Inscrições Abertas",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCn4cnZzpznkgEWNNQsXKZ2B3kNiU7nR1cecUdDAgia05IvZA5QMFlsBo3MTPvUrXSmI-ucaA4Q6FqpqnbQPoMKfQtgFIZHmS6-2rytFeHXIsScPxQV-eBXFjXy-iPQN5AQr-DJKlfcYnzfaZ96TL6pslA6e_w-sEG5NYNPeNhvq9BsL4G3bFhn4uepe5Whe_Ee4G_5LothLewVSXuqsC1bnUyUVLk-1-PMWrIPAubmPLKl-24bKIQMbC4W6FhrPpIJDPS_oZlnGWo"
+        },
+        {
+            id: 3,
+            tag: "Grupo de Performance",
+            title: "Banda Cruzeiro do Sul",
+            status: "Audições em Breve",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuD_HxI2JoIyFIZqGtytFQJ4a5tUV9Syb2xb8Ot5kJ3o0j9sCqyVRj70lUte0r2GfSwxMFnx_qtJVndZ5wiWuBap6M25LNGjREWR_nhgMUSaz40_fXVGH3zrr5_xj8uRrnGlSr9rqdyil_sY9lHmZsN4l_m7CMiEhcq43DAp1ETGou_laHXBKQ3C3bYLzXqJbdYYDKYvyY60LREfVnhGDLUhQSdcSvh3xDj1iI-GzuyeaCrSJaHl85u6hwnE7VqDgq-Z5k__Wf83cfY"
+        },
+        {
+            id: 4,
+            tag: "Cordas & Iniciação",
+            title: "Orquestra de Cordas Sinfônica",
+            status: "Vagas Limitadas",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBxYnSvapkIW1JWkNCj33_wEz4nEQyGes-JuAbS-_SZRAxQDTc8uB6pCb_sGPeACQ0gzCkOzTus7w-N91-HqrGczhh04Mnsi4ym7c-U7WpGXALcjMTkLRyjIoNwT4RLJ32dmQDVUuxf6JC7QROdS5eNxgfYyA98K74q62UqRTnrXhEtPDynPpN5bKCIzhEPPRqSVDXAy278lKf4A1uYpkA_q_KWn3qKqu5LLcF9-1s5bRx5XRp9sToXbmknDa-K1AVc8tQ9iNJALkQ"
+        },
+        {
+            id: 5,
+            tag: "Canto Coral",
+            title: "Coral Vozes da Sociedade",
+            status: "Aulas Noturnas",
+            image: "https://images.unsplash.com/photo-1549487928-8d9ed90494df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80",
+            imageOpacity: "opacity-80"
+        }
+    ];
 
     // Mock RSS Data para apresentação de Layout (Sem requisições à APIs externas)
     const rssMockData = [
@@ -28,28 +68,29 @@ export default function Home() {
         }
     ];
 
-    // Auto-Scroll do Carrossel 
-    useEffect(() => {
+    const scrollToProject = (index) => {
+        if (!carouselRef.current) return;
         const carousel = carouselRef.current;
-        if (!carousel) return;
+        const cards = Array.from(carousel.children).filter(child => child.tagName === 'DIV');
+        if (cards && cards[index]) {
+            const scrollLeft = cards[index].offsetLeft - carousel.offsetLeft - 24;
+            carousel.scrollTo({ left: Math.max(0, scrollLeft), behavior: 'smooth' });
+        }
+        setActiveProjectIndex(index);
+    };
 
-        const startAutoScroll = () => {
-            scrollInterval.current = setInterval(() => {
-                // Rola 1px por frame. Quando atingir o final, volta para o início suavemente
-                if (carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth - 1) {
-                    carousel.scrollTo({ left: 0, behavior: 'smooth' });
-                } else {
-                    carousel.scrollBy({ left: 1, behavior: 'auto' });
-                }
-            }, 30); // 30ms para animação fluida
-        };
-
+    // Auto-Scroll do Carrossel de Projetos (Paginado)
+    useEffect(() => {
         if (!isHoveringCarousel) {
-            startAutoScroll();
-            // Esconde a barra de rolagem quando não hover via CSS custom (ver className)
+            scrollInterval.current = setInterval(() => {
+                setActiveProjectIndex((prev) => {
+                    const next = (prev + 1) % projectsData.length;
+                    scrollToProject(next);
+                    return next;
+                });
+            }, 4000);
         } else {
-            clearInterval(scrollInterval.current);
-            // Barra de rolagem nativa fica disponível para controle manual
+            if (scrollInterval.current) clearInterval(scrollInterval.current);
         }
 
         return () => {
@@ -57,6 +98,26 @@ export default function Home() {
         };
     }, [isHoveringCarousel]);
 
+    const handleProjectScroll = () => {
+        if (!carouselRef.current) return;
+        const carousel = carouselRef.current;
+        const cards = Array.from(carousel.children).filter(child => child.tagName === 'DIV');
+        let closestIndex = 0;
+        let minDistance = Infinity;
+        const scrollCenter = carousel.scrollLeft + carousel.clientWidth / 2;
+
+        for (let i = 0; i < cards.length; i++) {
+            const cardCenter = cards[i].offsetLeft - carousel.offsetLeft + cards[i].clientWidth / 2;
+            const distance = Math.abs(scrollCenter - cardCenter);
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestIndex = i;
+            }
+        }
+        if (activeProjectIndex !== closestIndex) {
+            setActiveProjectIndex(closestIndex);
+        }
+    };
 
     // Rolar para a seção correta se vier de outra página com hash
     useEffect(() => {
@@ -112,65 +173,50 @@ export default function Home() {
                     onMouseLeave={() => setIsHoveringCarousel(false)}
                     onTouchStart={() => setIsHoveringCarousel(true)}
                     onTouchEnd={() => setIsHoveringCarousel(false)}
-                    className={`flex overflow-x-auto gap-8 pb-8 ${!isHoveringCarousel ? 'scrollbar-hide' : 'scrollbar-default'} transition-all`}
-                    style={{ scrollbarWidth: isHoveringCarousel ? 'auto' : 'none', msOverflowStyle: isHoveringCarousel ? 'auto' : 'none' }}
+                    onScroll={handleProjectScroll}
+                    className="flex overflow-x-auto gap-8 pb-8 hide-scrollbar snap-x snap-mandatory transition-all scroll-smooth"
                 >
-                    {/* Estilo embutido pro webkit scrollbar esconder quando auto-rolando */}
                     <style>{`
-                         .scrollbar-hide::-webkit-scrollbar { display: none; }
+                         .hide-scrollbar::-webkit-scrollbar { display: none; }
+                         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                     `}</style>
+                    {projectsData.map((project, index) => (
+                        <div key={project.id} onClick={() => scrollToProject(index)} className="group relative h-[550px] w-full min-w-[85vw] md:w-[calc(33.333%-1.5rem)] md:min-w-[350px] flex-shrink-0 snap-center md:snap-start rounded-[2rem] overflow-hidden cursor-pointer shadow-2xl">
+                            <img alt={project.title} className={`absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 ${project.imageOpacity || ''}`} src={project.image} />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                            <div className="absolute bottom-0 left-0 p-10 w-full">
+                                <p className="text-white/70 text-sm font-semibold mb-2 tracking-wide">{project.tag}</p>
+                                <h3 className="text-3xl font-bold text-white mb-4 group-hover:-translate-y-1 transition-transform">{project.title}</h3>
+                                <div className="flex items-center gap-2 text-primary group-hover:gap-4 transition-all font-bold">{project.status}</div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
-                    {/* Card 1 */}
-                    <div className="group relative h-[550px] w-full min-w-[320px] md:w-[calc(33.333%-1.5rem)] md:min-w-[350px] flex-shrink-0 snap-start rounded-[2rem] overflow-hidden cursor-pointer shadow-2xl">
-                        <img alt="Youth Wind Classes" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhysACTL1JzRViWs-2RTPLgrfnC7sahn5s8edpvicLUw5NrU9lKoF8DOGDkpYCC0HZb4-MNlZZ6S8mgyRrrzr1PFu2UlxmmNpZGT4d9VPa3mYAAXzKrwuvvN5qo7OpVge63IscAXHl3I6j9SR8RhgNpfLJ6zArCkVYNkLWvfDFyxMZXf5JU5IZj7mJXk7ncWVNsceDQ09d1_q3NSGcBGzReJnxIry3D7sBfqqa8fze5GcdhfcHdWDQFyu3tBRrqC3K-GN5gsPXL0Y" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 p-10 w-full">
-                            <p className="text-white/70 text-sm font-semibold mb-2 tracking-wide">Treinamento Orquestral</p>
-                            <h3 className="text-3xl font-bold text-white mb-4 group-hover:-translate-y-1 transition-transform">Sopros e Percussão Jovem</h3>
-                            <div className="flex items-center gap-2 text-primary group-hover:gap-4 transition-all font-bold">Início Flexível</div>
-                        </div>
-                    </div>
-                    {/* Card 2 */}
-                    <div className="group relative h-[550px] w-full min-w-[320px] md:w-[calc(33.333%-1.5rem)] md:min-w-[350px] flex-shrink-0 snap-start rounded-[2rem] overflow-hidden cursor-pointer shadow-2xl">
-                        <img alt="Elderly Choro Ensemble" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCn4cnZzpznkgEWNNQsXKZ2B3kNiU7nR1cecUdDAgia05IvZA5QMFlsBo3MTPvUrXSmI-ucaA4Q6FqpqnbQPoMKfQtgFIZHmS6-2rytFeHXIsScPxQV-eBXFjXy-iPQN5AQr-DJKlfcYnzfaZ96TL6pslA6e_w-sEG5NYNPeNhvq9BsL4G3bFhn4uepe5Whe_Ee4G_5LothLewVSXuqsC1bnUyUVLk-1-PMWrIPAubmPLKl-24bKIQMbC4W6FhrPpIJDPS_oZlnGWo" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 p-10 w-full">
-                            <p className="text-white/70 text-sm font-semibold mb-2 tracking-wide">Brasileiro Tradicional</p>
-                            <h3 className="text-3xl font-bold text-white mb-4 group-hover:-translate-y-1 transition-transform">Conjunto de Choro Sênior</h3>
-                            <div className="flex items-center gap-2 text-primary group-hover:gap-4 transition-all font-bold">Inscrições Abertas</div>
-                        </div>
-                    </div>
-                    {/* Card 3 */}
-                    <div className="group relative h-[550px] w-full min-w-[320px] md:w-[calc(33.333%-1.5rem)] md:min-w-[350px] flex-shrink-0 snap-start rounded-[2rem] overflow-hidden cursor-pointer shadow-2xl">
-                        <img alt="Cruzeiro do Sul Band" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_HxI2JoIyFIZqGtytFQJ4a5tUV9Syb2xb8Ot5kJ3o0j9sCqyVRj70lUte0r2GfSwxMFnx_qtJVndZ5wiWuBap6M25LNGjREWR_nhgMUSaz40_fXVGH3zrr5_xj8uRrnGlSr9rqdyil_sY9lHmZsN4l_m7CMiEhcq43DAp1ETGou_laHXBKQ3C3bYLzXqJbdYYDKYvyY60LREfVnhGDLUhQSdcSvh3xDj1iI-GzuyeaCrSJaHl85u6hwnE7VqDgq-Z5k__Wf83cfY" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 p-10 w-full">
-                            <p className="text-white/70 text-sm font-semibold mb-2 tracking-wide">Grupo de Performance</p>
-                            <h3 className="text-3xl font-bold text-white mb-4 group-hover:-translate-y-1 transition-transform">Banda Cruzeiro do Sul</h3>
-                            <div className="flex items-center gap-2 text-primary group-hover:gap-4 transition-all font-bold">Audições em Breve</div>
-                        </div>
-                    </div>
-                    {/* Card 4 (NOVO) */}
-                    <div className="group relative h-[550px] w-full min-w-[320px] md:w-[calc(33.333%-1.5rem)] md:min-w-[350px] flex-shrink-0 snap-start rounded-[2rem] overflow-hidden cursor-pointer shadow-2xl">
-                        <img alt="Violin Practice" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxYnSvapkIW1JWkNCj33_wEz4nEQyGes-JuAbS-_SZRAxQDTc8uB6pCb_sGPeACQ0gzCkOzTus7w-N91-HqrGczhh04Mnsi4ym7c-U7WpGXALcjMTkLRyjIoNwT4RLJ32dmQDVUuxf6JC7QROdS5eNxgfYyA98K74q62UqRTnrXhEtPDynPpN5bKCIzhEPPRqSVDXAy278lKf4A1uYpkA_q_KWn3qKqu5LLcF9-1s5bRx5XRp9sToXbmknDa-K1AVc8tQ9iNJALkQ" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 p-10 w-full">
-                            <p className="text-white/70 text-sm font-semibold mb-2 tracking-wide">Cordas & Iniciação</p>
-                            <h3 className="text-3xl font-bold text-white mb-4 group-hover:-translate-y-1 transition-transform">Orquestra de Cordas Sinfônica</h3>
-                            <div className="flex items-center gap-2 text-primary group-hover:gap-4 transition-all font-bold">Vagas Limitadas</div>
-                        </div>
-                    </div>
-                    {/* Card 5 (NOVO) */}
-                    <div className="group relative h-[550px] w-full min-w-[320px] md:w-[calc(33.333%-1.5rem)] md:min-w-[350px] flex-shrink-0 snap-start rounded-[2rem] overflow-hidden cursor-pointer shadow-2xl">
-                        <img alt="Choir Singing" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-80" src="https://images.unsplash.com/photo-1549487928-8d9ed90494df?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
-                        <div className="absolute bottom-0 left-0 p-10 w-full">
-                            <p className="text-white/70 text-sm font-semibold mb-2 tracking-wide">Canto Coral</p>
-                            <h3 className="text-3xl font-bold text-white mb-4 group-hover:-translate-y-1 transition-transform">Coral Vozes da Sociedade</h3>
-                            <div className="flex items-center gap-2 text-primary group-hover:gap-4 transition-all font-bold">Aulas Noturnas</div>
-                        </div>
-                    </div>
-
+                {/* Dots Pagination */}
+                <div className="flex justify-center gap-3 mt-4">
+                    {Array.from({ length: 3 }).map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => {
+                                // Mapeia o índice do dot (0,1,2) para o projeto correspondente
+                                // Se activeProjectIndex for 0: mostra 0,1,2 (dot 0 ativa 0)
+                                // Se activeProjectIndex for 4: mostra 2,3,4 (dot 0 ativa 2)
+                                let targetIndex;
+                                if (activeProjectIndex === 0) targetIndex = idx;
+                                else if (activeProjectIndex === projectsData.length - 1) targetIndex = projectsData.length - 3 + idx;
+                                else targetIndex = activeProjectIndex - 1 + idx;
+                                scrollToProject(targetIndex);
+                            }}
+                            className={`h-3 rounded-full transition-all duration-300 ${
+                                // Verifica se este dot representa o projeto ativo atual
+                                (activeProjectIndex === 0 && idx === 0) ||
+                                    (activeProjectIndex === projectsData.length - 1 && idx === 2) ||
+                                    (activeProjectIndex > 0 && activeProjectIndex < projectsData.length - 1 && idx === 1)
+                                    ? 'w-10 bg-slate-800 dark:bg-white' : 'w-3 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-500'}`}
+                            aria-label={`Ir para projeto relativo`}
+                        />
+                    ))}
                 </div>
             </section>
 
@@ -340,9 +386,78 @@ export default function Home() {
                 </div>
             </section>
 
-            <footer className="bg-slate-950 text-white pt-24 pb-12 px-6">
-                <div className="max-w-7xl mx-auto text-center text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold">
-                    <p>© 2026 Sociedade Cultural Cruzeiro do Sul. Todos os direitos reservados. Organização sem fins lucrativos.</p>
+            <footer className="bg-[#0b1121] text-white pt-20 pb-8 px-6 border-t-[1px] border-primary/20">
+                <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 font-medium">
+                    {/* Brand Info & Social */}
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-3 mb-6">
+                            <span className="material-symbols-outlined text-primary text-xl">sparkles</span>
+                            <span className="text-xl font-bold tracking-tight text-slate-100">Cruzeiro do Sul</span>
+                        </div>
+                        <p className="text-slate-400 text-sm leading-relaxed max-w-xs font-normal mb-8">
+                            Transformando vidas através da música e da cultura em nossa comunidade.
+                        </p>
+
+                        {/* Social Buttons moved here */}
+                        <div className="flex gap-4">
+                            <a href="#" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
+                                <span className="material-symbols-outlined text-sm">share</span>
+                            </a>
+                            <a href="#" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
+                                {/* Usando ion-icon ou mdi, mas como o pack atual é material symbols, ajustamos para a câmera que lembra o Insta, e play para YT */}
+                                <span className="material-symbols-outlined text-sm">photo_camera</span>
+                            </a>
+                            <a href="#" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
+                                <span className="material-symbols-outlined text-sm">smart_display</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* Quick Links */}
+                    <div className="flex flex-col gap-4">
+                        <h4 className="text-slate-100 font-bold mb-2">Links Rápidos</h4>
+                        <a href="#inicio" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Início</a>
+                        <a href="#projetos" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Programas</a>
+                        <a href="#eventos" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Eventos</a>
+                        <Link to="/login" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Área restrita</Link>
+                    </div>
+
+                    {/* Contact */}
+                    <div className="flex flex-col gap-4">
+                        <h4 className="text-slate-100 font-bold mb-2">Contato</h4>
+                        <div className="flex items-center gap-3 text-slate-400 text-sm font-normal">
+                            <span className="material-symbols-outlined text-primary text-[1rem]">mail</span>
+                            <span>contato@cruzeirodosul.org</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-slate-400 text-sm font-normal">
+                            <span className="material-symbols-outlined text-primary text-[1rem]">call</span>
+                            <span>(11) 4002-8922</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-slate-400 text-sm font-normal">
+                            <span className="material-symbols-outlined text-primary text-[1rem]">location_on</span>
+                            <span>Av. Paulista, 1000 - SP</span>
+                        </div>
+                    </div>
+
+                    {/* Google Maps Embed */}
+                    <div className="flex flex-col">
+                        <div className="w-full h-48 md:h-full min-h-[150px] rounded-xl overflow-hidden shadow-lg border border-slate-800">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.197365672836!2d-46.6564619!3d-23.5613398!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da0aa315%3A0xd59f9431f2c9776a!2sAv.%20Paulista%2C%201000%20-%20Bela%20Vista%2C%20S%C3%A3o%20Paulo%20-%20SP%2C%2001310-100!5e0!3m2!1sen!2sbr!4v1709400000000!5m2!1sen!2sbr"
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                allowFullScreen=""
+                                loading="lazy"
+                                referrerPolicy="no-referrer-when-downgrade"
+                            ></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom line */}
+                <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-center text-center">
+                    <p className="text-xs text-slate-500 font-medium">© 2024 Cruzeiro do Sul. Todos os direitos reservados. CNPJ: 00.000.000/0001-00</p>
                 </div>
             </footer>
         </div>

@@ -67,13 +67,16 @@ export default function Header() {
                 <div className="flex items-center gap-6">
                     <nav className="hidden lg:flex items-center gap-8 text-sm font-semibold text-white/90">
                         <a href="#inicio" onClick={(e) => handleScrollToHash(e, 'inicio')} className="hover:text-primary transition-colors cursor-pointer">
-                            Início
+                            Home
                         </a>
                         <a href="#projetos" onClick={(e) => handleScrollToHash(e, 'projetos')} className="hover:text-primary transition-colors cursor-pointer">
                             Projetos
                         </a>
                         <a href="#eventos" onClick={(e) => handleScrollToHash(e, 'eventos')} className="hover:text-primary transition-colors cursor-pointer">
                             Eventos
+                        </a>
+                        <a href="#contato" onClick={(e) => handleScrollToHash(e, 'contato')} className="hover:text-primary transition-colors cursor-pointer">
+                            Contato
                         </a>
                         <Link to="/login" className="hover:text-primary transition-colors">
                             Área restrita

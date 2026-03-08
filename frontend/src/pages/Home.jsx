@@ -8,6 +8,79 @@ export default function Home() {
     const scrollInterval = useRef(null);
     const [isHoveringCarousel, setIsHoveringCarousel] = useState(false);
     const [activeProjectIndex, setActiveProjectIndex] = useState(0);
+    const [activeEventIndex, setActiveEventIndex] = useState(0);
+    const [activeTab, setActiveTab] = useState('FIA');
+
+    const accountsData = {
+        FIA: {
+            title: "Fundo da Infância e Adolescência (FIA)",
+            description: "Apoie projetos voltados diretamente para nossas crianças e adolescentes.",
+            banco: "Banco do Brasil (001)",
+            agencia: "1234-5",
+            conta: "98765-4",
+            cnpj: "00.000.000/0001-00 (Fundo FIA)"
+        },
+        FMI: {
+            title: "Fundo Municipal do Idoso (FMI)",
+            description: "Contribua para a inclusão e qualidade de vida da terceira idade através da arte.",
+            banco: "Caixa Econômica Federal (104)",
+            agencia: "0123",
+            conta: "45678-9",
+            cnpj: "11.111.111/0001-11 (Fundo FMI)"
+        },
+        SCCS: {
+            title: "Sociedade Cultura Cruzeiro do Sul",
+            description: "Doação direta para a manutenção da nossa orquestra e estrutura cultural.",
+            banco: "Banco Itaú (341)",
+            agencia: "4321",
+            conta: "11223-4",
+            cnpj: "22.222.222/0001-22 (SCCS)",
+            pix: "00.000.000/0001-00"
+        }
+    };
+
+    const eventsData = [
+        {
+            id: 1,
+            tag: "Orquestra Jovem SCCS",
+            title: "Galeria das Artes Locais",
+            date: "15 de Ago",
+            time: "19:00",
+            locationLink: "https://maps.google.com/?q=Teatro+Municipal",
+            description: "Participe de um concerto intimista com nossos alunos avançados apresentando peças fundamentais do repertório clássico ao som de acústica especial.",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBxYnSvapkIW1JWkNCj33_wEz4nEQyGes-JuAbS-_SZRAxQDTc8uB6pCb_sGPeACQ0gzCkOzTus7w-N91-HqrGczhh04Mnsi4ym7c-U7WpGXALcjMTkLRyjIoNwT4RLJ32dmQDVUuxf6JC7QROdS5eNxgfYyA98K74q62UqRTnrXhEtPDynPpN5bKCIzhEPPRqSVDXAy278lKf4A1uYpkA_q_KWn3qKqu5LLcF9-1s5bRx5XRp9sToXbmknDa-K1AVc8tQ9iNJALkQ"
+        },
+        {
+            id: 2,
+            tag: "Grupo de Madeiras",
+            title: "Visita de Luthier Renomado",
+            date: "22 de Ago",
+            time: "14:30",
+            locationLink: "https://maps.google.com/?q=Conservatorio",
+            description: "Nesta tarde exclusiva, os membros da orquestra aprenderão com um mestre construtor sobre os segredos de afinação e manutenção.",
+            image: "https://images.unsplash.com/photo-1612225330812-01a9c6b355ec?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80"
+        },
+        {
+            id: 3,
+            tag: "Roda de Choro SCCS",
+            title: "Noite de Choro e Tradição",
+            date: "05 de Set",
+            time: "20:00",
+            locationLink: "https://maps.google.com/?q=Praca+Central",
+            description: "Celebrando nossa raiz brasileira com uma extensa programação. Partidas musicais com alunos, professores e convidados.",
+            image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCn4cnZzpznkgEWNNQsXKZ2B3kNiU7nR1cecUdDAgia05IvZA5QMFlsBo3MTPvUrXSmI-ucaA4Q6FqpqnbQPoMKfQtgFIZHmS6-2rytFeHXIsScPxQV-eBXFjXy-iPQN5AQr-DJKlfcYnzfaZ96TL6pslA6e_w-sEG5NYNPeNhvq9BsL4G3bFhn4uepe5Whe_Ee4G_5LothLewVSXuqsC1bnUyUVLk-1-PMWrIPAubmPLKl-24bKIQMbC4W6FhrPpIJDPS_oZlnGWo"
+        },
+        {
+            id: 4,
+            tag: "Coral Cruzeiro do Sul",
+            title: "Apresentação de Outono",
+            date: "12 de Set",
+            time: "18:00",
+            locationLink: "https://maps.google.com/?q=Auditorio+Principal",
+            description: "O nosso coral se reúne para apresentar um repertório emocionante misturando música popular brasileira e erudita, com participações especiais.",
+            image: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        }
+    ];
 
     const projectsData = [
         {
@@ -226,69 +299,84 @@ export default function Home() {
                     {/* PARTE 1 - Eventos da Comunidade (Slider Horizontal) */}
                     <div className="mb-20">
                         <div className="text-center mb-12">
-                            <span className="text-primary font-semibold tracking-wider uppercase text-sm mb-4 block">Eventos da Comunidade</span>
-                            <h2 className="text-4xl md:text-5xl font-display font-extrabold leading-tight mb-6">
-                                Nutrindo a <span className="text-primary">Alma da Música</span>
-                            </h2>
-                            <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">
-                                Deslize lateralmente para explorar os recitais e apresentações exclusivas deste mês.
-                            </p>
+                            <span className="text-primary font-semibold tracking-wider uppercase text-sm mb-4 block">Apoio</span>
+
+                            {/* Infinite Sponsor Logos Carousel */}
+                            <div className="relative w-full max-w-5xl mx-auto overflow-hidden h-32 flex items-center before:absolute before:left-0 before:top-0 before:z-10 before:h-full before:w-20 before:bg-gradient-to-r before:from-slate-50 before:to-transparent dark:before:from-slate-900/50 after:absolute after:right-0 after:top-0 after:z-10 after:h-full after:w-20 after:bg-gradient-to-l after:from-slate-50 after:to-transparent dark:after:from-slate-900/50">
+                                <style>{`
+                                    @keyframes slide-logos {
+                                        0% { transform: translateX(0); }
+                                        100% { transform: translateX(-50%); }
+                                    }
+                                    .animate-slide-logos {
+                                        animation: slide-logos 25s linear infinite;
+                                        width: max-content;
+                                    }
+                                `}</style>
+
+                                <div className="flex items-center animate-slide-logos hover:[animation-play-state:paused] whitespace-nowrap min-w-max">
+                                    {/* Duplicates for infinite scrolling illusion */}
+                                    {[...Array(2)].map((_, i) => (
+                                        <div key={i} className="flex items-center gap-16 md:gap-24 px-8 md:px-12 flex-shrink-0">
+                                            {/* Generic transparent logos */}
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" className="h-8 md:h-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain mt-2" />
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" className="h-8 md:h-10 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft" className="h-6 md:h-8 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/Slack_Technologies_Logo.svg" alt="Slack" className="h-8 md:h-10 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix" className="h-6 md:h-8 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" alt="IBM" className="h-8 md:h-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="relative group overflow-hidden rounded-[3rem] shadow-2xl bg-slate-900">
-                            <div className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar">
-                                {/* Evento 1 */}
-                                <div className="flex-shrink-0 w-full snap-center grid grid-cols-1 md:grid-cols-2 flex-col-reverse md:flex-row h-auto min-h-[400px]">
-                                    <div className="p-10 md:p-16 flex flex-col justify-center bg-slate-900 text-white z-10 relative order-2 md:order-1">
-                                        <p className="text-xs font-semibold uppercase text-primary tracking-widest mb-3">Apresentação Ao Vivo</p>
-                                        <h3 className="text-3xl font-bold mb-4">Galeria das Artes Locais</h3>
-                                        <p className="text-slate-300 leading-relaxed mb-8">Participe de um concerto intimista com nossos alunos avançados apresentando peças fundamentais do repertório clássico ao som de acústica especial.</p>
-                                        <div className="flex items-center gap-3 text-primary font-semibold cursor-pointer hover:underline cursor-pointer group/btn">
-                                            <span>Adicionar ao Calendário</span>
-                                            <span className="material-symbols-outlined transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[450px]">
+                            {/* Menu dos Eventos (Lista Rolável) */}
+                            <div className="flex flex-col space-y-4 justify-start max-h-[500px] overflow-y-auto pr-2 overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+                                {eventsData.map((event, index) => (
+                                    <div
+                                        key={event.id}
+                                        onClick={() => setActiveEventIndex(index)}
+                                        className={`p-6 md:p-8 rounded-3xl cursor-pointer transition-all duration-300 border-2 flex-shrink-0 ${activeEventIndex === index ? 'bg-slate-900 border-primary shadow-xl shadow-primary/10' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700/50 hover:border-primary/50'}`}
+                                    >
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-2">
+                                            <h3 className={`text-sm md:text-base font-bold uppercase tracking-widest ${activeEventIndex === index ? 'text-primary' : 'text-primary'}`}>
+                                                {event.tag}
+                                            </h3>
+                                            <a href={event.locationLink || "#"} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1.5 hover:text-primary transition-colors hover:underline ${activeEventIndex === index ? 'text-slate-300' : 'text-slate-500'}`}>
+                                                <span className="material-symbols-outlined text-[1rem]">location_on</span>
+                                                <span className="text-sm">Ver no Mapa</span>
+                                            </a>
                                         </div>
-                                    </div>
-                                    <div className="relative order-1 md:order-2 h-64 md:h-auto overflow-hidden">
-                                        <img alt="Music Ensemble" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxYnSvapkIW1JWkNCj33_wEz4nEQyGes-JuAbS-_SZRAxQDTc8uB6pCb_sGPeACQ0gzCkOzTus7w-N91-HqrGczhh04Mnsi4ym7c-U7WpGXALcjMTkLRyjIoNwT4RLJ32dmQDVUuxf6JC7QROdS5eNxgfYyA98K74q62UqRTnrXhEtPDynPpN5bKCIzhEPPRqSVDXAy278lKf4A1uYpkA_q_KWn3qKqu5LLcF9-1s5bRx5XRp9sToXbmknDa-K1AVc8tQ9iNJALkQ" />
-                                    </div>
-                                </div>
-                                {/* Evento 2 */}
-                                <div className="flex-shrink-0 w-full snap-center grid grid-cols-1 md:grid-cols-2 flex-col-reverse md:flex-row h-auto min-h-[400px]">
-                                    <div className="p-10 md:p-16 flex flex-col justify-center bg-slate-900 text-white z-10 relative order-2 md:order-1">
-                                        <p className="text-xs font-semibold uppercase text-primary tracking-widest mb-3">Masterclass Especial</p>
-                                        <h3 className="text-3xl font-bold mb-4">Visita de Luthier Renomado</h3>
-                                        <p className="text-slate-300 leading-relaxed mb-8">Nesta tarde exclusiva, os membros da orquestra de cordas aprenderão com um mestre construtor sobre os segredos de afinação e manutenção crítica.</p>
-                                        <div className="flex items-center gap-3 text-primary font-semibold hover:underline cursor-pointer group/btn">
-                                            <span>Garantir Participação</span>
-                                            <span className="material-symbols-outlined transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
+                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-1">
+                                            <h4 className={`text-xl md:text-2xl font-bold ${activeEventIndex === index ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
+                                                {event.title}
+                                            </h4>
+                                            <div className={`flex items-center gap-1.5 text-xs md:text-sm font-semibold whitespace-nowrap ${activeEventIndex === index ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                <span className="material-symbols-outlined text-[1rem]">schedule</span>
+                                                <span>{event.date} às {event.time}</span>
+                                            </div>
                                         </div>
+                                        {activeEventIndex === index && (
+                                            <p className="text-slate-300 leading-relaxed text-sm animate-[fadeIn_0.5s_ease-out] mt-4 pt-4 border-t border-slate-700/50">
+                                                {event.description}
+                                            </p>
+                                        )}
                                     </div>
-                                    <div className="relative order-1 md:order-2 h-64 md:h-auto overflow-hidden">
-                                        <img alt="Luthier Masterclass" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 hover:scale-105" src="https://images.unsplash.com/photo-1612225330812-01a9c6b355ec?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80" />
-                                    </div>
-                                </div>
-                                {/* Evento 3 */}
-                                <div className="flex-shrink-0 w-full snap-center grid grid-cols-1 md:grid-cols-2 flex-col-reverse md:flex-row h-auto min-h-[400px]">
-                                    <div className="p-10 md:p-16 flex flex-col justify-center bg-slate-900 text-white z-10 relative order-2 md:order-1">
-                                        <p className="text-xs font-semibold uppercase text-primary tracking-widest mb-3">Festival de Inverno</p>
-                                        <h3 className="text-3xl font-bold mb-4">Noite de Choro e Tradição</h3>
-                                        <p className="text-slate-300 leading-relaxed mb-8">Celebrando nossa raiz brasileira com uma extensa programação aberta. Partidas musicais com alunos, professores e convidados ilustres locais.</p>
-                                        <div className="flex items-center gap-3 text-primary font-semibold hover:underline cursor-pointer group/btn">
-                                            <span>Comprar Ingressos VIP</span>
-                                            <span className="material-symbols-outlined transition-transform group-hover/btn:translate-x-1">arrow_forward</span>
-                                        </div>
-                                    </div>
-                                    <div className="relative order-1 md:order-2 h-64 md:h-auto overflow-hidden">
-                                        <img alt="Choro Event" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCn4cnZzpznkgEWNNQsXKZ2B3kNiU7nR1cecUdDAgia05IvZA5QMFlsBo3MTPvUrXSmI-ucaA4Q6FqpqnbQPoMKfQtgFIZHmS6-2rytFeHXIsScPxQV-eBXFjXy-iPQN5AQr-DJKlfcYnzfaZ96TL6pslA6e_w-sEG5NYNPeNhvq9BsL4G3bFhn4uepe5Whe_Ee4G_5LothLewVSXuqsC1bnUyUVLk-1-PMWrIPAubmPLKl-24bKIQMbC4W6FhrPpIJDPS_oZlnGWo" />
-                                    </div>
-                                </div>
-
+                                ))}
                             </div>
-                            {/* CSS para esconder barra horizontal deste slider especificamente preservando snap */}
-                            <style>{`
-                                 .hide-scrollbar::-webkit-scrollbar { display: none; }
-                                 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-                             `}</style>
+
+                            {/* Imagem do Evento Ativo */}
+                            <div className="relative rounded-[3rem] overflow-hidden shadow-2xl h-[400px] lg:h-auto lg:min-h-[500px] group border border-slate-800">
+                                <img
+                                    src={eventsData[activeEventIndex].image}
+                                    alt={eventsData[activeEventIndex].title}
+                                    className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
+                                    key={activeEventIndex}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none"></div>
+                            </div>
                         </div>
                     </div>
 
@@ -330,63 +418,86 @@ export default function Home() {
 
             {/* SEÇÃO DOAÇÃO EMBUTIDA (Antes era uma página isolada) */}
             <section id="doacao" className="bg-background-light dark:bg-background-dark py-20 scroll-mt-20 border-t border-slate-200 dark:border-slate-800">
-                <div className="px-4 md:px-20 lg:px-40">
-                    <div className="relative min-h-[400px] flex flex-col gap-6 bg-cover bg-center bg-no-repeat rounded-xl md:rounded-3xl items-center justify-center p-8 overflow-hidden mb-12" style={{ backgroundImage: "linear-gradient(rgba(34, 24, 16, 0.7), rgba(34, 24, 16, 0.7)), url('https://lh3.googleusercontent.com/aida-public/AB6AXuAYPok7pFpnOHrYtndOZ8QTmViG3LWAoIXgaCmiDJ_U-qhBgm5mQ5Tyc9WmKI7fgwGMoElZ5JkEsge86klODjQ9Ft4BcVZfp2i0AdjerFTQqlIVZmQxyS7a7plwGv9xzwOxwpciH4As70q7GqWMSjd4cJQo44oXZ8bCNYOY2_PjctMZKr70x4aRpzUVktEgTIImUjHeNnjMwh_DpvCVhu4m9jHsLQ-uu144vD2_Sv_9m2EIIjGp_nTQU_a8q_fq7R-6zaNdk5w7nIw')" }}>
-                        <div className="max-w-3xl flex flex-col gap-4 text-center z-10">
-                            <span className="text-primary font-bold tracking-widest uppercase text-xs">Preservando a Arte</span>
-                            <h1 className="text-white text-4xl md:text-5xl font-extrabold leading-tight tracking-tighter">
-                                Apoie o Som do Nosso Futuro
-                            </h1>
-                            <p className="text-slate-200 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-                                Sua contribuição financia diretamente a preservação de tradições musicais e capacita a próxima geração de artistas.
-                            </p>
-                        </div>
-                    </div>
+                <div className="relative flex items-center justify-center py-12 md:py-24 px-4 min-h-[600px]">
+                    {/* Unified Background */}
+                    <div
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed object-cover"
+                        style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAYPok7pFpnOHrYtndOZ8QTmViG3LWAoIXgaCmiDJ_U-qhBgm5mQ5Tyc9WmKI7fgwGMoElZ5JkEsge86klODjQ9Ft4BcVZfp2i0AdjerFTQqlIVZmQxyS7a7plwGv9xzwOxwpciH4As70q7GqWMSjd4cJQo44oXZ8bCNYOY2_PjctMZKr70x4aRpzUVktEgTIImUjHeNnjMwh_DpvCVhu4m9jHsLQ-uu144vD2_Sv_9m2EIIjGp_nTQU_a8q_fq7R-6zaNdk5w7nIw')" }}
+                    />
+                    <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" />
 
-                    <div className="max-w-4xl mx-auto bg-white dark:bg-slate-900 rounded-3xl p-8 md:p-12 shadow-xl border border-primary/5">
-                        <div className="text-center mb-10">
-                            <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-slate-100">Faça um Impacto Hoje</h2>
-                            <p className="text-slate-500 dark:text-slate-400 mt-2">Escolha um valor para apoiar nossas iniciativas culturais</p>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                            <button className="flex flex-col items-center justify-center rounded-2xl h-24 border-2 border-primary/10 bg-background-light dark:bg-slate-800 hover:border-primary hover:bg-primary/5 transition-all group">
-                                <span className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary">R$ 25</span>
-                                <span className="text-xs text-slate-500 uppercase tracking-wider mt-1">Apoiador</span>
-                            </button>
-                            <button className="flex flex-col items-center justify-center rounded-2xl h-24 border-2 border-primary/10 bg-background-light dark:bg-slate-800 hover:border-primary hover:bg-primary/5 transition-all group">
-                                <span className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary">R$ 50</span>
-                                <span className="text-xs text-slate-500 uppercase tracking-wider mt-1">Parceiro</span>
-                            </button>
-                            <button className="flex flex-col items-center justify-center rounded-2xl h-24 border-2 border-primary bg-primary/5 transition-all">
-                                <span className="text-2xl font-bold text-primary">R$ 100</span>
-                                <span className="text-xs text-primary uppercase tracking-wider mt-1">Campeão</span>
-                            </button>
-                            <button className="flex flex-col items-center justify-center rounded-2xl h-24 border-2 border-primary/10 bg-background-light dark:bg-slate-800 hover:border-primary hover:bg-primary/5 transition-all group">
-                                <span className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-primary">R$ 250</span>
-                                <span className="text-xs text-slate-500 uppercase tracking-wider mt-1">Patrono</span>
-                            </button>
-                        </div>
-                        <div className="max-w-md mx-auto mb-10">
-                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 text-center">Ou insira um valor personalizado</label>
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
-                                <input className="w-full bg-background-light dark:bg-slate-800 border-2 border-primary/10 rounded-2xl h-14 pl-12 pr-4 text-lg font-bold focus:border-primary focus:ring-0 transition-all outline-none" placeholder="0,00" type="number" />
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-center gap-4">
-                            <button className="w-full max-w-sm bg-primary text-white text-lg font-bold py-4 rounded-2xl shadow-lg shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer">
-                                Finalizar Doação
-                            </button>
-                            <p className="text-xs text-slate-400 flex items-center gap-1">
-                                <span className="material-symbols-outlined text-sm">lock</span>
-                                Transação criptografada e segura
+                    <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col lg:flex-row gap-12 items-center">
+                        {/* Texto Principal */}
+                        <div className="flex-1 text-center lg:text-left">
+                            <span className="text-primary font-bold tracking-widest uppercase text-xs md:text-sm mb-4 block">Faça um Impacto Hoje</span>
+                            <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tighter mb-6">
+                                Apoie o Som do Nosso Futuro
+                            </h2>
+                            <p className="text-slate-300 text-lg md:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed mb-8">
+                                Sua contribuição financia diretamente a preservação de tradições musicais e capacita a próxima geração de artistas. Escolha a melhor forma de apoiar.
                             </p>
+                        </div>
+
+                        {/* Menu de Doação / Contas */}
+                        <div className="w-full max-w-md bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-700/50 rounded-3xl overflow-hidden shadow-2xl">
+
+                            {/* Tabs */}
+                            <div className="flex border-b border-white/10 dark:border-slate-700/50">
+                                {['FIA', 'FMI', 'SCCS'].map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setActiveTab(tab)}
+                                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === tab ? 'bg-primary text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Detalhes da Conta */}
+                            <div className="p-8 md:p-10 text-center flex flex-col items-center">
+                                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mb-6 animate-[fadeIn_0.5s_ease-out]" key={`icon-${activeTab}`}>
+                                    <span className="material-symbols-outlined text-3xl">account_balance</span>
+                                </div>
+
+                                <h3 className="text-xl md:text-2xl font-bold text-white mb-2 animate-[fadeIn_0.5s_ease-out]" key={`title-${activeTab}`}>
+                                    {accountsData[activeTab].title}
+                                </h3>
+                                <p className="text-sm text-slate-300 mb-8 animate-[fadeIn_0.5s_ease-out]" key={`desc-${activeTab}`}>
+                                    {accountsData[activeTab].description}
+                                </p>
+
+                                <div className="w-full space-y-4 text-left border border-white/10 dark:border-slate-700/50 bg-slate-900/50 rounded-2xl p-6 animate-[fadeIn_0.5s_ease-out]" key={`details-${activeTab}`}>
+                                    <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                        <span className="text-slate-400 text-xs uppercase tracking-wider">Banco</span>
+                                        <span className="text-white font-semibold text-sm">{accountsData[activeTab].banco}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                        <span className="text-slate-400 text-xs uppercase tracking-wider">Agência</span>
+                                        <span className="text-white font-semibold text-sm">{accountsData[activeTab].agencia}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                        <span className="text-slate-400 text-xs uppercase tracking-wider">Conta Corrente</span>
+                                        <span className="text-white font-semibold text-sm">{accountsData[activeTab].conta}</span>
+                                    </div>
+                                    <div className={`flex justify-between items-center ${accountsData[activeTab].pix ? 'border-b border-white/10 pb-3' : 'pt-1'}`}>
+                                        <span className="text-slate-400 text-xs uppercase tracking-wider">CNPJ</span>
+                                        <span className="text-white font-semibold text-sm text-right max-w-[150px] truncate" title={accountsData[activeTab].cnpj}>{accountsData[activeTab].cnpj}</span>
+                                    </div>
+                                    {accountsData[activeTab].pix && (
+                                        <div className="flex justify-between items-center pt-1">
+                                            <span className="text-slate-400 text-xs uppercase tracking-wider">Chave PIX</span>
+                                            <span className="text-primary font-bold text-sm tracking-wide">{accountsData[activeTab].pix}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <footer className="bg-[#0b1121] text-white pt-20 pb-8 px-6 border-t-[1px] border-primary/20">
+            <footer id="contato" className="bg-[#0b1121] text-white pt-20 pb-8 px-6 border-t-[1px] border-primary/20">
                 <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 font-medium">
                     {/* Brand Info & Social */}
                     <div className="flex flex-col">
@@ -416,9 +527,10 @@ export default function Home() {
                     {/* Quick Links */}
                     <div className="flex flex-col gap-4">
                         <h4 className="text-slate-100 font-bold mb-2">Links Rápidos</h4>
-                        <a href="#inicio" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Início</a>
+                        <a href="#inicio" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Home</a>
                         <a href="#projetos" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Programas</a>
                         <a href="#eventos" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Eventos</a>
+                        <a href="#contato" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Contato</a>
                         <Link to="/login" className="text-slate-400 hover:text-primary transition-colors text-sm font-normal">Área restrita</Link>
                     </div>
 

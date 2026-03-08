@@ -7,3 +7,8 @@
     @apply antialiased text-slate-900 dark:text-slate-100 bg-background-light dark:bg-background-dark;
   }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

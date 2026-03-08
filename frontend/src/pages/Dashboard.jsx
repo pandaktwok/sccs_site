@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, Calendar, Rss, Database, CreditCard, User, LogOut, Menu, X } from 'lucide-react';
+import { Activity, Calendar, Rss, Database, CreditCard, User, LogOut, Menu, X, ExternalLink } from 'lucide-react';
 
 export default function Dashboard() {
     const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function Dashboard() {
         { name: 'Gerir Eventos', icon: <Calendar size={20} /> },
         { name: 'Notícias & RSS', icon: <Rss size={20} /> },
         { name: 'Banco de Dados', icon: <Database size={20} /> },
-        { name: 'Pagamentos', icon: <CreditCard size={20} /> },
+        { name: 'Pagamentos', icon: <CreditCard size={20} />, href: 'https://pagamentos.sccruzeirodosul.org/' },
     ];
 
     return (
@@ -33,17 +33,31 @@ export default function Dashboard() {
 
                 <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
                     {navItems.map((item) => (
-                        <button
-                            key={item.name}
-                            onClick={() => setActiveTab(item.name)}
-                            className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === item.name
+                        item.href ? (
+                            <a
+                                key={item.name}
+                                href={item.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all font-semibold text-sm text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                            >
+                                {item.icon}
+                                {item.name}
+                                <ExternalLink size={16} className="ml-auto opacity-50" />
+                            </a>
+                        ) : (
+                            <button
+                                key={item.name}
+                                onClick={() => setActiveTab(item.name)}
+                                className={`w-full flex items-center gap-4 px-4 py-3 rounded-xl transition-all font-semibold text-sm ${activeTab === item.name
                                     ? 'bg-primary/10 text-primary border border-primary/20'
                                     : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                                }`}
-                        >
-                            {item.icon}
-                            {item.name}
-                        </button>
+                                    }`}
+                            >
+                                {item.icon}
+                                {item.name}
+                            </button>
+                        )
                     ))}
                 </nav>
 
@@ -74,17 +88,31 @@ export default function Dashboard() {
                 <div className="md:hidden fixed inset-0 z-40 bg-slate-900 pt-20 flex flex-col h-full">
                     <nav className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                         {navItems.map((item) => (
-                            <button
-                                key={item.name}
-                                onClick={() => { setActiveTab(item.name); setIsMobileMenuOpen(false); }}
-                                className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all font-semibold text-lg ${activeTab === item.name
+                            item.href ? (
+                                <a
+                                    key={item.name}
+                                    href={item.href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all font-semibold text-lg text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                                >
+                                    {item.icon}
+                                    {item.name}
+                                    <ExternalLink size={18} className="ml-auto opacity-50" />
+                                </a>
+                            ) : (
+                                <button
+                                    key={item.name}
+                                    onClick={() => { setActiveTab(item.name); setIsMobileMenuOpen(false); }}
+                                    className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-all font-semibold text-lg ${activeTab === item.name
                                         ? 'bg-primary/10 text-primary border border-primary/20'
                                         : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                                    }`}
-                            >
-                                {item.icon}
-                                {item.name}
-                            </button>
+                                        }`}
+                                >
+                                    {item.icon}
+                                    {item.name}
+                                </button>
+                            )
                         ))}
                     </nav>
                     <div className="p-6">

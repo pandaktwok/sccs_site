@@ -50,17 +50,21 @@ export default function Header() {
 
                 {/* Lado Esquerdo: Nome da Instituição */}
                 <Link to="/" className={`text-white font-extrabold tracking-tight hidden md:flex items-center gap-3 transition-all duration-300 ${textSizeClass}`}>
-                    <div className={`bg-white/10 rounded-lg flex items-center justify-center text-primary transition-all duration-300 ${logoSizeClass}`}>
-                        C
-                    </div>
+                    <img
+                        src="http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
+                        alt="SCCS Logo"
+                        className={`object-contain transition-all duration-300 ${isExpanded ? 'w-12 h-12' : 'w-8 h-8'}`}
+                    />
                     Sociedade Cultural Cruzeiro do Sul
                 </Link>
 
                 {/* Apenas ícone no mobile para manter compatibilidade */}
                 <Link to="/" className="md:hidden text-white font-extrabold flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center text-primary">
-                        C
-                    </div>
+                    <img
+                        src="http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
+                        alt="SCCS Logo"
+                        className="w-10 h-10 object-contain"
+                    />
                 </Link>
 
                 {/* Lado Direito: Links de Navegação e Botão Doar */}

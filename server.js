@@ -1,7 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const Parser = require('rss-parser');
+const fs = require('fs-extra');
+const fileUpload = require('express-fileupload');
+const { createClient } = require('webdav');
 require('dotenv').config();
+
+const parser = new Parser();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -9,9 +15,51 @@ const PORT = process.env.PORT || 5000;
 // Configuração do CORS
 app.use(cors());
 app.use(express.json());
+app.use(fileUpload());
+
+// Servir arquivos estáticos da pasta uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Configuração Nextcloud WebDAV
+const nextcloudClient = createClient(
+    process.env.NEXTCLOUD_URL || 'https://nextcloud.sccruzeirodosul.org/remote.php/dav/files/USER/',
+    {
+        username: process.env.NEXTCLOUD_USERNAME || 'USER',
+        password: process.env.NEXTCLOUD_PASSWORD || 'PASSWORD'
+    }
+);
+const NEXTCLOUD_ROOT = process.env.NEXTCLOUD_ROOT || '/img_site';
+
+// Rota de Proxy para visualizar imagens do Nextcloud publicamente
+app.get('/api/public/file/*', async (req, res) => {
+    try {
+        const filePath = '/' + req.params[0];
+        const stream = nextcloudClient.createReadStream(filePath);
+
+        // Tentar adivinhar content-type básico
+        const ext = path.extname(filePath).toLowerCase();
+        const mimeTypes = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.webp': 'image/webp',
+            '.svg': 'image/svg+xml',
+            '.pdf': 'application/pdf'
+        };
+
+        if (mimeTypes[ext]) {
+            res.setHeader('Content-Type', mimeTypes[ext]);
+        }
+
+        stream.pipe(res);
+    } catch (error) {
+        res.status(404).send('Arquivo não encontrado no Nextcloud');
+    }
+});
 
 // --- MOCKS DE DADOS --- (substituir por conexões de banco de dados no futuro)
-const mockEvents = [
+let mockEvents = [
     {
         id: 1,
         tag: "Orquestra Jovem SCCS",
@@ -121,24 +169,290 @@ app.get('/api/events', (req, res) => {
     }, 500);
 });
 
+app.post('/api/events', (req, res) => {
+    const { title, tag, date, time, image, description } = req.body;
+
+    if (!title || !tag || !date || !time || !image || !description) {
+        return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+    }
+
+    const newEvent = {
+        id: Date.now(),
+        title, tag, date, time, image, description,
+        locationLink: req.body.locationLink || ""
+    };
+    mockEvents.push(newEvent);
+    res.status(201).json(newEvent);
+});
+
+app.put('/api/events/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const { title, tag, date, time, image, description } = req.body;
+
+    if (!title || !tag || !date || !time || !image || !description) {
+        return res.status(400).json({ error: "Campos obrigatórios ausentes" });
+    }
+
+    const index = mockEvents.findIndex(ev => ev.id === id);
+    if (index !== -1) {
+        mockEvents[index] = {
+            id, title, tag, date, time, image, description,
+            locationLink: req.body.locationLink || ""
+        };
+        res.json(mockEvents[index]);
+    } else {
+        res.status(404).json({ error: "Evento não encontrado" });
+    }
+});
+
+app.delete('/api/events/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    mockEvents = mockEvents.filter(ev => ev.id !== id);
+    res.status(204).send();
+});
+
+app.get('/api/partners', async (req, res) => {
+    try {
+        const logoDir = path.join(NEXTCLOUD_ROOT, 'logos').replace(/\\/g, '/');
+        const items = await nextcloudClient.getDirectoryContents(logoDir);
+
+        const logos = items
+            .filter(item => item.type === 'file' && item.basename.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i))
+            .map(item => ({
+                id: item.etag,
+                name: item.basename,
+                url: `${req.protocol}://${req.get('host')}/api/public/file${item.filename}`
+            }));
+
+        res.json(logos);
+    } catch (error) {
+        // Se a pasta não existir ou erro de conexão, retorna array vazio
+        res.json([]);
+    }
+});
+
 app.get('/api/projects', (req, res) => {
     setTimeout(() => {
         res.json(mockProjects);
     }, 500);
 });
 
-app.get('/api/news', (req, res) => {
-    setTimeout(() => {
-        res.json(mockNews);
-    }, 500);
+// --- RSS CONFIGURATION ---
+const rssFeeds = [
+    'https://novavenezaonline.com.br/feed',
+    'https://engeplus.com.br/rss',
+    'https://agorasul.com.br/feed',
+    'https://tnsul.com/feed',
+    'https://canalicara.com/rss'
+];
+
+const rssTags = [
+    "SCCS",
+    "Sociedade Cultural Cruzeiro do Sul",
+    "Chorinho Carvoeiro",
+    "Músicos do Futuro",
+    "Garantindo o Direito da Pessoa Idosa"
+];
+
+const rssFallbackTags = [
+    "cultura",
+    "FMI",
+    "FIA",
+    "editais",
+    "Criciúma",
+    "Criciuma"
+];
+
+let cachedNews = [];
+let lastFetchTime = 0;
+
+async function fetchAndFilterRSS() {
+    const now = Date.now();
+    // Cache for 15 minutes to avoid rate limits
+    if (cachedNews.length > 0 && (now - lastFetchTime < 15 * 60 * 1000)) {
+        return cachedNews;
+    }
+
+    const allNews = [];
+    const allFallbackNews = [];
+    const allFreshNews = [];
+    const tagsLower = rssTags.map(t => t.toLowerCase());
+    const fallbackTagsLower = rssFallbackTags.map(t => t.toLowerCase());
+
+    await Promise.allSettled(rssFeeds.map(async (feedUrl) => {
+        try {
+            console.log(`[RSS] Buscando feed: ${feedUrl}`);
+            const feed = await parser.parseURL(feedUrl);
+            let foundWithTag = 0;
+            let foundWithFallbackTag = 0;
+
+            feed.items.forEach(item => {
+                const titleLower = (item.title || '').toLowerCase();
+                const contentLower = (item.contentSnippet || item.content || '').toLowerCase();
+
+                // Check if any tag is present in title or content
+                const matchedTag = tagsLower.find(tag => titleLower.includes(tag) || contentLower.includes(tag));
+                const matchedFallbackTag = fallbackTagsLower.find(tag => titleLower.includes(tag) || contentLower.includes(tag));
+
+                const newsItem = {
+                    id: Buffer.from(item.link || item.guid || '').toString('base64').substring(0, 10),
+                    title: item.title,
+                    source: feed.title || new URL(feedUrl).hostname,
+                    link: item.link,
+                    imageUrl: (item.content?.match(/<img[^>]+src="([^">]+)"/) || [])[1] ||
+                        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                    description: item.contentSnippet || item.content?.replace(/<[^>]*>?/gm, '').substring(0, 150) + "...",
+                    pubDate: item.isoDate || item.pubDate
+                };
+
+                if (matchedTag) {
+                    console.log(`[RSS] 🎯 MATCH PRINCIPAL ENCONTRADO! Tag: "${matchedTag}" | Notícia: ${item.title}`);
+                    allNews.push(newsItem);
+                    foundWithTag++;
+                } else if (matchedFallbackTag) {
+                    console.log(`[RSS] 🔵 MATCH SECUNDÁRIO (Plano B)! Tag: "${matchedFallbackTag}" | Notícia: ${item.title}`);
+                    allFallbackNews.push(newsItem);
+                    foundWithFallbackTag++;
+                }
+
+                allFreshNews.push(newsItem);
+            });
+            console.log(`[RSS] Concluído ${feedUrl}. Encontradas Principais: ${foundWithTag} | Secundárias: ${foundWithFallbackTag} de ${feed.items.length} totais.`);
+
+        } catch (error) {
+            console.error(`[RSS] ❌ Erro ao buscar feed ${feedUrl}:`, error.message);
+        }
+    }));
+
+    // Sort by most recent
+    allNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    allFallbackNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    allFreshNews.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+
+    console.log(`[RSS] Resumo Final: ${allNews.length} tags principais, ${allFallbackNews.length} tags secundárias (Plano B). Fallback banco de testes (antigas): ${allNews.length === 0 && allFallbackNews.length === 0}`);
+
+    let finalNews;
+    if (allNews.length > 0) {
+        finalNews = allNews;
+    } else if (allFallbackNews.length > 0) {
+        console.log(`[RSS] Usando Notícias do Plano B (Secundárias)`);
+        finalNews = allFallbackNews;
+    } else {
+        console.log(`[RSS] Usando Notícias Fictícias de Banco de Testes (Fallback final)`);
+        finalNews = mockNews;
+    }
+
+    cachedNews = finalNews.slice(0, 1); // keep only 1 news item as requested
+    console.log(`[RSS] Salvando cache. Próxima notícia a ser exibida: ${cachedNews[0].title}`);
+    lastFetchTime = Date.now();
+    return cachedNews;
+}
+
+app.get('/api/news', async (req, res) => {
+    try {
+        const news = await fetchAndFilterRSS();
+        res.json(news);
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch RSS feeds" });
+    }
+});
+
+app.post('/api/rss/refresh', async (req, res) => {
+    try {
+        console.log('[RSS] Recebida requisição para limpeza de cache e recarregamento dos feeds.');
+        cachedNews = [];
+        lastFetchTime = 0;
+        await fetchAndFilterRSS(); // fetch to populate the cache immediately
+        res.json({ message: "RSS Feeds refreshed successfully." });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to refresh RSS feeds" });
+    }
 });
 
 // Boilerplates (esqueletos) futuros de backend e integrações DB
 app.post('/api/auth/login', (req, res) => res.status(501).json({ error: "Not Implemented" }));
 app.get('/api/settings', (req, res) => res.status(501).json({ error: "Not Implemented" }));
-app.get('/api/members', (req, res) => res.status(501).json({ error: "Not Implemented" }));
-app.get('/api/documents', (req, res) => res.status(501).json({ error: "Not Implemented" }));
-app.get('/api/registrations', (req, res) => res.status(501).json({ error: "Not Implemented" }));
+
+// --- GERENCIAMENTO DE ARQUIVOS (DATABASE VISUAL) ---
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+// Listar arquivos e pastas do Nextcloud
+app.get('/api/files', async (req, res) => {
+    try {
+        const subPath = req.query.path || '';
+        const targetDir = path.join(NEXTCLOUD_ROOT, subPath).replace(/\\/g, '/');
+
+        const items = await nextcloudClient.getDirectoryContents(targetDir);
+
+        const folders = items
+            .filter(item => item.type === 'directory')
+            .map(item => path.relative(NEXTCLOUD_ROOT, item.filename).replace(/\\/g, '/'));
+
+        const files = items
+            .filter(item => item.type === 'file')
+            .map(item => {
+                const relativePath = path.relative(NEXTCLOUD_ROOT, item.filename).replace(/\\/g, '/');
+                return {
+                    name: item.basename,
+                    url: `${req.protocol}://${req.get('host')}/api/public/file${item.filename}`,
+                    path: relativePath,
+                    fullPath: item.filename
+                };
+            });
+
+        res.json({ files, folders });
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao conectar com Nextcloud: " + error.message });
+    }
+});
+
+// Upload de arquivo para o Nextcloud
+app.post('/api/upload', async (req, res) => {
+    try {
+        if (!req.files || Object.keys(req.files).length === 0) {
+            return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
+        }
+
+        const file = req.files.file;
+        const subPath = req.body.path || '';
+        const targetDir = path.join(NEXTCLOUD_ROOT, subPath).replace(/\\/g, '/');
+
+        // Garantir que a pasta existe (WebDAV não tem ensureDir como fs-extra)
+        // Simplificação: tentamos criar a pasta se não for a raiz
+        if (subPath) {
+            try {
+                await nextcloudClient.createDirectory(targetDir);
+            } catch (e) {
+                // Provavelmente já existe
+            }
+        }
+
+        const uploadPath = path.join(targetDir, file.name).replace(/\\/g, '/');
+        await nextcloudClient.putFileContents(uploadPath, file.data);
+
+        res.json({
+            message: 'Upload concluído no Nextcloud!',
+            url: `${req.protocol}://${req.get('host')}/api/public/file${uploadPath}`
+        });
+    } catch (error) {
+        res.status(500).json({ error: "Erro no upload Nextcloud: " + error.message });
+    }
+});
+
+// Excluir arquivo do Nextcloud
+app.delete('/api/files', async (req, res) => {
+    try {
+        const filePath = req.query.path;
+        if (!filePath) return res.status(400).json({ error: "Caminho não fornecido" });
+
+        const targetPath = path.join(NEXTCLOUD_ROOT, filePath).replace(/\\/g, '/');
+
+        await nextcloudClient.deleteFile(targetPath);
+        res.json({ message: "Arquivo excluído do Nextcloud com sucesso" });
+    } catch (error) {
+        res.status(500).json({ error: "Erro ao excluir no Nextcloud: " + error.message });
+    }
+});
 
 
 // Servir a build do frontend
@@ -150,7 +464,11 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(buildPath, 'index.html'));
 });
 
-// Inicialização do Servidor
-app.listen(PORT, () => {
-    console.log(`Backend server running on http://localhost:${PORT}`);
-});
+// Inicialização do Servidor (apenas se executado diretamente)
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Backend server running on http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;

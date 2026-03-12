@@ -18,7 +18,8 @@ export default function Home() {
             banco: "Banco do Brasil (001)",
             agencia: "1234-5",
             conta: "98765-4",
-            cnpj: "00.000.000/0001-00 (Fundo FIA)"
+            cnpj: "00.000.000/0001-00 (Fundo FIA)",
+            logo: "http://localhost:5000/api/public/file/img_site/logos/FIA.png"
         },
         FMI: {
             title: "Fundo Municipal do Idoso (FMI)",
@@ -26,7 +27,8 @@ export default function Home() {
             banco: "Caixa Econômica Federal (104)",
             agencia: "0123",
             conta: "45678-9",
-            cnpj: "11.111.111/0001-11 (Fundo FMI)"
+            cnpj: "11.111.111/0001-11 (Fundo FMI)",
+            logo: "http://localhost:5000/api/public/file/img_site/logos/Conselho Municipal dos Direitos da Pessia Idoso de Criciúma (1).png"
         },
         SCCS: {
             title: "Sociedade Cultura Cruzeiro do Sul",
@@ -35,27 +37,31 @@ export default function Home() {
             agencia: "4321",
             conta: "11223-4",
             cnpj: "22.222.222/0001-22 (SCCS)",
-            pix: "00.000.000/0001-00"
+            pix: "00.000.000/0001-00",
+            logo: "http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
         }
     };
 
     const [eventsData, setEventsData] = useState([]);
     const [projectsData, setProjectsData] = useState([]);
+    const [partnersData, setPartnersData] = useState([]);
     const [rssMockData, setRssMockData] = useState([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
-                const [eventsRes, projectsRes, newsRes] = await Promise.all([
+                const [eventsRes, projectsRes, newsRes, partnersRes] = await Promise.all([
                     fetch('/api/events'),
                     fetch('/api/projects'),
-                    fetch('/api/news')
+                    fetch('/api/news'),
+                    fetch('/api/partners')
                 ]);
 
                 if (eventsRes.ok) setEventsData(await eventsRes.json());
                 if (projectsRes.ok) setProjectsData(await projectsRes.json());
                 if (newsRes.ok) setRssMockData(await newsRes.json());
+                if (partnersRes.ok) setPartnersData(await partnersRes.json());
             } catch (error) {
                 console.error("Erro ao buscar dados da Home:", error);
             } finally {
@@ -243,13 +249,23 @@ export default function Home() {
                                     {/* Duplicates for infinite scrolling illusion */}
                                     {[...Array(2)].map((_, i) => (
                                         <div key={i} className="flex items-center gap-16 md:gap-24 px-8 md:px-12 flex-shrink-0">
-                                            {/* Generic transparent logos */}
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" className="h-8 md:h-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain mt-2" />
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" className="h-8 md:h-10 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft" className="h-6 md:h-8 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/b/b9/Slack_Technologies_Logo.svg" alt="Slack" className="h-8 md:h-10 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="Netflix" className="h-6 md:h-8 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/51/IBM_logo.svg" alt="IBM" className="h-8 md:h-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                            {partnersData.length > 0 ? (
+                                                partnersData.map((logo) => (
+                                                    <img
+                                                        key={`${i}-${logo.id}`}
+                                                        src={logo.url}
+                                                        alt={logo.name}
+                                                        className="h-8 md:h-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain"
+                                                    />
+                                                ))
+                                            ) : (
+                                                /* Fallback se não houver logos no Nextcloud */
+                                                <>
+                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_logo.svg" alt="Amazon" className="h-8 md:h-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain mt-2" />
+                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" className="h-8 md:h-10 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg" alt="Microsoft" className="h-6 md:h-8 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain" />
+                                                </>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -269,10 +285,12 @@ export default function Home() {
                                             <h3 className={`text-sm md:text-base font-bold uppercase tracking-widest ${activeEventIndex === index ? 'text-primary' : 'text-primary'}`}>
                                                 {event.tag}
                                             </h3>
-                                            <a href={event.locationLink || "#"} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1.5 hover:text-primary transition-colors hover:underline ${activeEventIndex === index ? 'text-slate-300' : 'text-slate-500'}`}>
-                                                <span className="material-symbols-outlined text-[1rem]">location_on</span>
-                                                <span className="text-sm">Ver no Mapa</span>
-                                            </a>
+                                            {event.locationLink && (
+                                                <a href={event.locationLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1.5 hover:text-primary transition-colors hover:underline ${activeEventIndex === index ? 'text-slate-300' : 'text-slate-500'}`}>
+                                                    <span className="material-symbols-outlined text-[1rem]">location_on</span>
+                                                    <span className="text-sm">Ver no Mapa</span>
+                                                </a>
+                                            )}
                                         </div>
                                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-1">
                                             <h4 className={`text-xl md:text-2xl font-bold ${activeEventIndex === index ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
@@ -307,9 +325,9 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* PARTE 2 - Widget de RSS (Mockado/Manual conforme diretriz) */}
-                    <div className="mb-8">
-                        <span className="text-primary font-bold tracking-wider uppercase text-sm mb-4 block text-center md:text-left">Notícias Recentes (RSS Mock)</span>
+                    {/* PARTE 2 - Widget de RSS */}
+                    <div className="w-full flex flex-col gap-6" id="noticias">
+                        <span className="text-primary font-bold tracking-wider uppercase text-sm mb-4 block text-center md:text-left">Notícias Recentes</span>
                     </div>
                     <div className="flex flex-col gap-8">
                         {rssMockData.map((news) => (
@@ -383,8 +401,12 @@ export default function Home() {
 
                             {/* Detalhes da Conta */}
                             <div className="p-8 md:p-10 text-center flex flex-col items-center">
-                                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-primary mb-6 animate-[fadeIn_0.5s_ease-out]" key={`icon-${activeTab}`}>
-                                    <span className="material-symbols-outlined text-3xl">account_balance</span>
+                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center p-3 mb-6 animate-[fadeIn_0.5s_ease-out] shadow-xl border border-white/20" key={`icon-${activeTab}`}>
+                                    <img
+                                        src={accountsData[activeTab].logo}
+                                        alt={activeTab}
+                                        className="w-full h-full object-contain"
+                                    />
                                 </div>
 
                                 <h3 className="text-xl md:text-2xl font-bold text-white mb-2 animate-[fadeIn_0.5s_ease-out]" key={`title-${activeTab}`}>
@@ -429,8 +451,11 @@ export default function Home() {
                     {/* Brand Info & Social */}
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3 mb-6">
-                            <span className="material-symbols-outlined text-primary text-xl">sparkles</span>
-                            <span className="text-xl font-bold tracking-tight text-slate-100">Cruzeiro do Sul</span>
+                            <img
+                                src="http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
+                                alt="SCCS Logo"
+                                className="h-16 w-auto object-contain"
+                            />
                         </div>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-xs font-normal mb-8">
                             Transformando vidas através da música e da cultura em nossa comunidade.

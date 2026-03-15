@@ -2132,9 +2132,8 @@ export default function Dashboard() {
                         <div className="flex-1 border-2 border-dashed border-slate-800 rounded-3xl flex flex-col items-center justify-center p-12 text-center bg-slate-900/30">
                             <Icon name="monitoring" size={64} className="text-slate-700 mb-6" />
                             <h2 className="text-2xl font-bold text-slate-300 mb-2">Módulo: {activeTab}</h2>
-                            <p className="text-slate-500 max-w-md">
-                                O mock para o módulo de <strong className="text-primary">{activeTab}</strong> será construído quando definirmos a estrutura da API do Backend. Use o menu ao lado para explorar.
-                            </p>
+                                Esta funcionalidade do módulo de <strong className="text-primary">{activeTab}</strong> está sendo processada pelo servidor. Utilize o menu lateral para gerenciar os dados ativos.
+
                         </div>
                     )}
                 </div>

@@ -5,6 +5,7 @@ frontend/node_modules/
 .DS_Store
 Thumbs.db
 dist/
+public_html/
 build/
 .tmp/
 frontend/dist/

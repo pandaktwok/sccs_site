@@ -401,13 +401,13 @@ app.delete('/api/files', authenticateToken, asyncHandler(async (req, res) => {
 }));
 
 // --- SERVING FRONTEND (PRODUCTION) ---
-const distPath = path.join(__dirname, 'frontend', 'dist');
+const distPath = path.join(__dirname, 'public_html');
 
 if (fs.existsSync(distPath)) {
     console.log("Serving frontend from:", distPath);
     app.use(express.static(distPath));
     
-    // Catch-all for SPA: Redirect all non-API routes to index.html
+    // Catch-all for SPA
     app.get('*', (req, res) => {
         if (!req.path.startsWith('/api')) {
             res.sendFile(path.join(distPath, 'index.html'));
@@ -416,9 +416,9 @@ if (fs.existsSync(distPath)) {
         }
     });
 } else {
-    console.warn("Frontend dist folder not found. Run 'npm run build' to generate it.");
+    console.warn("Frontend build folder (public_html) not found. Run 'npm run build' to generate it.");
     app.get('/', (req, res) => {
-        res.send("Backend is running, but frontend is not built. Please run 'npm run build'.");
+        res.send("Backend is running, but frontend is not built in /public_html folder. Please run 'npm run build'.");
     });
 }
 

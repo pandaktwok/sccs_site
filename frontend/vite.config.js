@@ -6,8 +6,8 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   build: {
-    outDir: '../public_html',
-    emptyOutDir: true
+    outDir: '../',
+    emptyOutDir: false
   },
   server: {
     proxy: {

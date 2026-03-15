@@ -400,26 +400,33 @@ app.delete('/api/files', authenticateToken, asyncHandler(async (req, res) => {
     }
 }));
 
-// --- SERVING FRONTEND (PRODUCTION) ---
-const distPath = path.join(__dirname, 'public_html');
+// --- SERVING FRONTEND (PRODUCTION AT ROOT) ---
+// Serve assets folder
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-if (fs.existsSync(distPath)) {
-    console.log("Serving frontend from:", distPath);
-    app.use(express.static(distPath));
-    
-    // Catch-all for SPA
-    app.get('*', (req, res) => {
-        if (!req.path.startsWith('/api')) {
-            res.sendFile(path.join(distPath, 'index.html'));
-        } else {
-            res.status(404).json({ error: "API route not found" });
+// Serve other static items (vite manifest, logo, etc) if they are in root
+app.use(express.static(__dirname, {
+    index: false,
+    setHeaders: (res, path) => {
+        // Security: Don't serve sensitive files even if requested directly
+        if (path.endsWith('.env') || path.includes('node_modules')) {
+            res.status(403).end();
         }
-    });
-} else {
-    console.warn("Frontend build folder (public_html) not found. Run 'npm run build' to generate it.");
-    app.get('/', (req, res) => {
-        res.send("Backend is running, but frontend is not built in /public_html folder. Please run 'npm run build'.");
-    });
-}
+    }
+}));
+
+// Catch-all for SPA: serve the index.html from root
+app.get('*', (req, res) => {
+    if (!req.path.startsWith('/api')) {
+        const indexPath = path.join(__dirname, 'index.html');
+        if (fs.existsSync(indexPath)) {
+            res.sendFile(indexPath);
+        } else {
+            res.send("Backend is running, but index.html was not found in root. Please run 'npm run build'.");
+        }
+    } else {
+        res.status(404).json({ error: "API route not found" });
+    }
+});
 
 app.listen(PORT, () => console.log(`Server optimized on http://localhost:${PORT}`));

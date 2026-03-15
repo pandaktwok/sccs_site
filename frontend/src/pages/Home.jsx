@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 
+const Icon = ({ name, size = 20, className = "" }) => (
+    <span className={`material-symbols-outlined ${className}`} style={{ fontSize: size, verticalAlign: 'middle' }}>
+        {name}
+    </span>
+);
+
 export default function Home() {
     const location = useLocation();
     const carouselRef = useRef(null);
@@ -9,59 +15,59 @@ export default function Home() {
     const [isHoveringCarousel, setIsHoveringCarousel] = useState(false);
     const [activeProjectIndex, setActiveProjectIndex] = useState(0);
     const [activeEventIndex, setActiveEventIndex] = useState(0);
-    const [activeTab, setActiveTab] = useState('FIA');
-
-    const accountsData = {
-        FIA: {
-            title: "Fundo da Infância e Adolescência (FIA)",
-            description: "Apoie projetos voltados diretamente para nossas crianças e adolescentes.",
-            banco: "Banco do Brasil (001)",
-            agencia: "1234-5",
-            conta: "98765-4",
-            cnpj: "00.000.000/0001-00 (Fundo FIA)",
-            logo: "http://localhost:5000/api/public/file/img_site/logos/FIA.png"
-        },
-        FMI: {
-            title: "Fundo Municipal do Idoso (FMI)",
-            description: "Contribua para a inclusão e qualidade de vida da terceira idade através da arte.",
-            banco: "Caixa Econômica Federal (104)",
-            agencia: "0123",
-            conta: "45678-9",
-            cnpj: "11.111.111/0001-11 (Fundo FMI)",
-            logo: "http://localhost:5000/api/public/file/img_site/logos/Conselho Municipal dos Direitos da Pessia Idoso de Criciúma (1).png"
-        },
-        SCCS: {
-            title: "Sociedade Cultura Cruzeiro do Sul",
-            description: "Doação direta para a manutenção da nossa orquestra e estrutura cultural.",
-            banco: "Banco Itaú (341)",
-            agencia: "4321",
-            conta: "11223-4",
-            cnpj: "22.222.222/0001-22 (SCCS)",
-            pix: "00.000.000/0001-00",
-            logo: "http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
-        }
-    };
-
     const [eventsData, setEventsData] = useState([]);
     const [projectsData, setProjectsData] = useState([]);
+    const [donationsData, setDonationsData] = useState([]);
     const [partnersData, setPartnersData] = useState([]);
     const [rssMockData, setRssMockData] = useState([]);
+    const [activeTab, setActiveTab] = useState('');
+    const [homeSettings, setHomeSettings] = useState({
+        heroImage: "",
+        heroTitle: "",
+        heroText: "",
+        projectsTitle: "",
+        projectsText: "",
+        donateMessage: "",
+        donateTitle: "",
+        donateText: "",
+        showEvents: true,
+        showNews: true,
+        footerTitle: "",
+        footerText: "",
+        footerEmail: "",
+        footerPhone: "",
+        footerAddress: "",
+        footerMapsUrl: "",
+        socials: {
+            instagram: { active: false, link: "" },
+            youtube: { active: false, link: "" },
+            facebook: { active: false, link: "" }
+        }
+    });
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     useEffect(() => {
         const fetchHomeData = async () => {
             try {
-                const [eventsRes, projectsRes, newsRes, partnersRes] = await Promise.all([
+                const [eventsRes, projectsRes, newsRes, partnersRes, settingsRes, donationsRes] = await Promise.all([
                     fetch('/api/events'),
                     fetch('/api/projects'),
                     fetch('/api/news'),
-                    fetch('/api/partners')
+                    fetch('/api/partners'),
+                    fetch('/api/settings/home'),
+                    fetch('/api/donations')
                 ]);
 
                 if (eventsRes.ok) setEventsData(await eventsRes.json());
                 if (projectsRes.ok) setProjectsData(await projectsRes.json());
                 if (newsRes.ok) setRssMockData(await newsRes.json());
                 if (partnersRes.ok) setPartnersData(await partnersRes.json());
+                if (settingsRes.ok) setHomeSettings(await settingsRes.json());
+                if (donationsRes.ok) {
+                    const donations = await donationsRes.json();
+                    setDonationsData(donations);
+                    if (donations.length > 0) setActiveTab(donations[0].tabName);
+                }
             } catch (error) {
                 console.error("Erro ao buscar dados da Home:", error);
             } finally {
@@ -146,14 +152,14 @@ export default function Home() {
                     <img
                         alt="Band Performance"
                         className="w-full h-full object-cover"
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDH4pOiw_k0ZhYpYolPQcl9TXg0xvbKldU7l_ciSMenSS_H5WXboQsGWcAnoy0wc-novN1AwEumuOVBYEuqmCiYJwvfqYpescoy3107DONk6HvGxCRdNBIqL7b9FliAIcgshGN6oXDMlQIltlvQlwtJ6xnRKrK7zTku7sSu6VAbjdqAHgkXxYYGSWDP7NJxRsJEcVdpLhTYvrfsLVkhxUPfyr9TjW9iK7KDC3cCFsZ029pPlj_eywVaSOxi9xaCGkHqZAkk2XwFPj8"
+                        src={homeSettings.heroImage || "/api/public/file/img_site/hero/band_performance.jpg"}
                     />
                     <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/60"></div>
                 </div>
                 <div className="relative z-10 text-center max-w-4xl px-6">
-                    <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-8 leading-[1.05] tracking-tight">Cultivando Ritmo e Tradição</h1>
+                    <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-8 leading-[1.05] tracking-tight">{homeSettings.heroTitle || "Cultivando Ritmo e Tradição"}</h1>
                     <p className="text-lg md:text-xl text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-                        Capacitando a comunidade através do poder transformador da educação musical orquestral e folclórica brasileira.
+                        {homeSettings.heroText || "Capacitando a comunidade através do poder transformador da educação musical orquestral e folclórica brasileira."}
                     </p>
                 </div>
             </section>
@@ -163,10 +169,12 @@ export default function Home() {
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
                     <div className="max-w-xl">
                         <span className="text-primary font-bold uppercase tracking-[0.2em] text-xs">Descubra</span>
-                        <h2 className="text-4xl md:text-5xl font-extrabold mt-3 dark:text-white leading-tight">Nossos Principais Programas Culturais</h2>
+                        <h2 className="text-4xl md:text-5xl font-extrabold mt-3 dark:text-white leading-tight">
+                            {homeSettings.projectsTitle || "Nossos Projetos em Atividade"}
+                        </h2>
                     </div>
                     <p className="text-slate-500 dark:text-slate-400 max-w-sm text-lg leading-relaxed">
-                        Do treinamento clássico aos conjuntos tradicionais, deslize para conhecer nossos 5 destaques deste semestre.
+                        {homeSettings.projectsText || "Conheça as diversas frentes de atuação cultural e educacional da SCCS, onde transformamos vidas através da música e da arte."}
                     </p>
                 </div>
 
@@ -190,7 +198,17 @@ export default function Home() {
                             <div className="absolute bottom-0 left-0 p-10 w-full">
                                 <p className="text-white/70 text-sm font-semibold mb-2 tracking-wide">{project.tag}</p>
                                 <h3 className="text-3xl font-bold text-white mb-4 group-hover:-translate-y-1 transition-transform">{project.title}</h3>
-                                <div className="flex items-center gap-2 text-primary group-hover:gap-4 transition-all font-bold">{project.status}</div>
+                                <div className="flex items-center justify-between">
+                                    <Link
+                                        to={project.btnLink || "#projetos"}
+                                        className="inline-flex items-center gap-2 text-primary font-bold text-sm group/btn hover:gap-3 transition-all"
+                                    >
+                                        {project.btnText || "Conheça mais"} <Icon name="arrow_forward" size={16} />
+                                    </Link>
+                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                        <Icon name="favorite" size={14} />
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -198,26 +216,14 @@ export default function Home() {
 
                 {/* Dots Pagination */}
                 <div className="flex justify-center gap-3 mt-4">
-                    {Array.from({ length: 3 }).map((_, idx) => (
+                    {projectsData.map((_, idx) => (
                         <button
                             key={idx}
-                            onClick={() => {
-                                // Mapeia o índice do dot (0,1,2) para o projeto correspondente
-                                // Se activeProjectIndex for 0: mostra 0,1,2 (dot 0 ativa 0)
-                                // Se activeProjectIndex for 4: mostra 2,3,4 (dot 0 ativa 2)
-                                let targetIndex;
-                                if (activeProjectIndex === 0) targetIndex = idx;
-                                else if (activeProjectIndex === projectsData.length - 1) targetIndex = projectsData.length - 3 + idx;
-                                else targetIndex = activeProjectIndex - 1 + idx;
-                                scrollToProject(targetIndex);
-                            }}
+                            onClick={() => scrollToProject(idx)}
                             className={`h-3 rounded-full transition-all duration-300 ${
-                                // Verifica se este dot representa o projeto ativo atual
-                                (activeProjectIndex === 0 && idx === 0) ||
-                                    (activeProjectIndex === projectsData.length - 1 && idx === 2) ||
-                                    (activeProjectIndex > 0 && activeProjectIndex < projectsData.length - 1 && idx === 1)
+                                activeProjectIndex === idx 
                                     ? 'w-10 bg-slate-800 dark:bg-white' : 'w-3 bg-slate-300 hover:bg-slate-400 dark:bg-slate-700 dark:hover:bg-slate-500'}`}
-                            aria-label={`Ir para projeto relativo`}
+                            aria-label={`Ir para projeto ${idx + 1}`}
                         />
                     ))}
                 </div>
@@ -270,92 +276,98 @@ export default function Home() {
                                 </div>
                             </div>
                         </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[450px]">
-                            {/* Menu dos Eventos (Lista Rolável) */}
-                            <div className="flex flex-col space-y-4 justify-start max-h-[500px] overflow-y-auto pr-2 overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
-                                {eventsData.map((event, index) => (
-                                    <div
-                                        key={event.id}
-                                        onClick={() => setActiveEventIndex(index)}
-                                        className={`p-6 md:p-8 rounded-3xl cursor-pointer transition-all duration-300 border-2 flex-shrink-0 ${activeEventIndex === index ? 'bg-slate-900 border-primary shadow-xl shadow-primary/10' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700/50 hover:border-primary/50'}`}
-                                    >
-                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-2">
-                                            <h3 className={`text-sm md:text-base font-bold uppercase tracking-widest ${activeEventIndex === index ? 'text-primary' : 'text-primary'}`}>
-                                                {event.tag}
-                                            </h3>
-                                            {event.locationLink && (
-                                                <a href={event.locationLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1.5 hover:text-primary transition-colors hover:underline ${activeEventIndex === index ? 'text-slate-300' : 'text-slate-500'}`}>
-                                                    <span className="material-symbols-outlined text-[1rem]">location_on</span>
-                                                    <span className="text-sm">Ver no Mapa</span>
-                                                </a>
-                                            )}
-                                        </div>
-                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-1">
-                                            <h4 className={`text-xl md:text-2xl font-bold ${activeEventIndex === index ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
+                        {homeSettings.showEvents && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 min-h-[450px]">
+                                {/* Menu dos Eventos (Lista Rolável) */}
+                                <div className="flex flex-col space-y-4 justify-start max-h-[500px] overflow-y-auto pr-2 overflow-x-hidden [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+                                    {eventsData.map((event, index) => (
+                                        <div
+                                            key={event.id}
+                                            onClick={() => setActiveEventIndex(index)}
+                                            className={`p-6 md:p-8 rounded-3xl cursor-pointer transition-all duration-300 border-2 flex-shrink-0 ${activeEventIndex === index ? 'bg-slate-900 border-primary shadow-xl shadow-primary/10' : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700/50 hover:border-primary/50'}`}
+                                        >
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-2">
+                                                <h3 className={`text-sm md:text-base font-bold uppercase tracking-widest ${activeEventIndex === index ? 'text-primary' : 'text-primary'}`}>
+                                                    {event.tag}
+                                                </h3>
+                                                <div className="flex items-center gap-3 text-[10px] md:text-xs font-bold text-slate-400">
+                                                    {event.locationLink && (
+                                                        <a href={event.locationLink} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={`flex items-center gap-1.5 hover:text-primary transition-colors hover:underline mr-2 ${activeEventIndex === index ? 'text-slate-300' : 'text-slate-500'}`}>
+                                                            <Icon name="location_on" size={14} />
+                                                            <span>Mapa</span>
+                                                        </a>
+                                                    )}
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Icon name="calendar_today" size={14} className="text-primary" /> {event.date}
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Icon name="schedule" size={14} className="text-primary" /> {event.time}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <h4 className={`text-xl md:text-2xl font-black mb-4 leading-tight ${activeEventIndex === index ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                                                 {event.title}
                                             </h4>
-                                            <div className={`flex items-center gap-1.5 text-xs md:text-sm font-semibold whitespace-nowrap ${activeEventIndex === index ? 'text-slate-400' : 'text-slate-500'}`}>
-                                                <span className="material-symbols-outlined text-[1rem]">schedule</span>
-                                                <span>{event.date} às {event.time}</span>
+                                            {activeEventIndex === index && (
+                                                <p className="text-slate-400 text-sm leading-relaxed animate-[fadeIn_0.5s_ease-out] line-clamp-3">
+                                                    {event.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Imagem do Evento Ativo */}
+                                <div className="relative rounded-[3rem] overflow-hidden shadow-2xl h-[400px] lg:h-auto lg:min-h-[500px] group border border-slate-800">
+                                    {eventsData.length > 0 && eventsData[activeEventIndex] && (
+                                        <img
+                                            src={eventsData[activeEventIndex].image}
+                                            alt={eventsData[activeEventIndex].title}
+                                            className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
+                                            key={activeEventIndex}
+                                        />
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none"></div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {homeSettings.showNews && (
+                        <>
+                            <div className="w-full flex flex-col gap-6" id="noticias">
+                                <span className="text-primary font-bold tracking-wider uppercase text-sm mb-4 block text-center md:text-left">Notícias Recentes</span>
+                            </div>
+                            <div className="flex flex-col gap-8">
+                                {rssMockData.map((news) => (
+                                    <div key={news.id} className="bg-white dark:bg-slate-800 rounded-[3rem] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700/50">
+                                        <div className="grid grid-cols-1 lg:grid-cols-12">
+                                            <div className="lg:col-span-4 lg:h-auto h-64 relative overflow-hidden">
+                                                <img alt={news.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105" src={news.imageUrl} />
+                                            </div>
+                                            <div className="lg:col-span-8 p-12 flex flex-col justify-center">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                                        <span className="material-symbols-outlined text-xl">rss_feed</span>
+                                                    </span>
+                                                    <a href={news.link} className="text-sm font-bold uppercase text-slate-500 hover:text-primary transition-colors cursor-pointer">{news.source}</a>
+                                                </div>
+                                                <h3 className="text-3xl font-display font-extrabold mb-4 dark:text-white line-clamp-2">{news.title}</h3>
+                                                <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed line-clamp-3">
+                                                    {news.description}
+                                                </p>
+                                                <div className="flex gap-4">
+                                                    <a href={news.link} className="text-primary font-bold hover:underline transition-all flex items-center gap-1">
+                                                        Ler Notícia Completa <span className="material-symbols-outlined text-sm">open_in_new</span>
+                                                    </a>
+                                                </div>
                                             </div>
                                         </div>
-                                        {activeEventIndex === index && (
-                                            <p className="text-slate-300 leading-relaxed text-sm animate-[fadeIn_0.5s_ease-out] mt-4 pt-4 border-t border-slate-700/50">
-                                                {event.description}
-                                            </p>
-                                        )}
                                     </div>
                                 ))}
                             </div>
-
-                            {/* Imagem do Evento Ativo */}
-                            <div className="relative rounded-[3rem] overflow-hidden shadow-2xl h-[400px] lg:h-auto lg:min-h-[500px] group border border-slate-800">
-                                {eventsData.length > 0 && eventsData[activeEventIndex] && (
-                                    <img
-                                        src={eventsData[activeEventIndex].image}
-                                        alt={eventsData[activeEventIndex].title}
-                                        className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:scale-105"
-                                        key={activeEventIndex}
-                                    />
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent pointer-events-none"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* PARTE 2 - Widget de RSS */}
-                    <div className="w-full flex flex-col gap-6" id="noticias">
-                        <span className="text-primary font-bold tracking-wider uppercase text-sm mb-4 block text-center md:text-left">Notícias Recentes</span>
-                    </div>
-                    <div className="flex flex-col gap-8">
-                        {rssMockData.map((news) => (
-                            <div key={news.id} className="bg-white dark:bg-slate-800 rounded-[3rem] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-700/50">
-                                <div className="grid grid-cols-1 lg:grid-cols-12">
-                                    <div className="lg:col-span-4 lg:h-auto h-64 relative overflow-hidden">
-                                        <img alt={news.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105" src={news.imageUrl} />
-                                    </div>
-                                    <div className="lg:col-span-8 p-12 flex flex-col justify-center">
-                                        <div className="flex items-center gap-2 mb-4">
-                                            <span className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                                <span className="material-symbols-outlined text-xl">rss_feed</span>
-                                            </span>
-                                            <a href={news.link} className="text-sm font-bold uppercase text-slate-500 hover:text-primary transition-colors cursor-pointer">{news.source}</a>
-                                        </div>
-                                        <h3 className="text-3xl font-display font-extrabold mb-4 dark:text-white line-clamp-2">{news.title}</h3>
-                                        <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed line-clamp-3">
-                                            {news.description}
-                                        </p>
-                                        <div className="flex gap-4">
-                                            <a href={news.link} className="text-primary font-bold hover:underline transition-all flex items-center gap-1">
-                                                Ler Notícia Completa <span className="material-symbols-outlined text-sm">open_in_new</span>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                        </>
+                    )}
 
                 </div>
             </section>
@@ -366,19 +378,19 @@ export default function Home() {
                     {/* Unified Background */}
                     <div
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat bg-fixed object-cover"
-                        style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAYPok7pFpnOHrYtndOZ8QTmViG3LWAoIXgaCmiDJ_U-qhBgm5mQ5Tyc9WmKI7fgwGMoElZ5JkEsge86klODjQ9Ft4BcVZfp2i0AdjerFTQqlIVZmQxyS7a7plwGv9xzwOxwpciH4As70q7GqWMSjd4cJQo44oXZ8bCNYOY2_PjctMZKr70x4aRpzUVktEgTIImUjHeNnjMwh_DpvCVhu4m9jHsLQ-uu144vD2_Sv_9m2EIIjGp_nTQU_a8q_fq7R-6zaNdk5w7nIw')" }}
+                        style={{ backgroundImage: `url(${homeSettings.donateBackground || '/api/public/file/img_site/sections/support_bg.jpg'})` }}
                     />
                     <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-0" />
 
                     <div className="relative z-10 w-full max-w-5xl mx-auto flex flex-col lg:flex-row gap-12 items-center">
                         {/* Texto Principal */}
                         <div className="flex-1 text-center lg:text-left">
-                            <span className="text-primary font-bold tracking-widest uppercase text-xs md:text-sm mb-4 block">Faça um Impacto Hoje</span>
+                            <span className="text-primary font-bold tracking-widest uppercase text-xs md:text-sm mb-4 block">{homeSettings.donateMessage || "Faça um Impacto Hoje"}</span>
                             <h2 className="text-white text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tighter mb-6">
-                                Apoie o Som do Nosso Futuro
+                                {homeSettings.donateTitle || "Apoie o Som do Nosso Futuro"}
                             </h2>
                             <p className="text-slate-300 text-lg md:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed mb-8">
-                                Sua contribuição financia diretamente a preservação de tradições musicais e capacita a próxima geração de artistas. Escolha a melhor forma de apoiar.
+                                {homeSettings.donateText || "Sua contribuição financia diretamente a preservação de tradições musicais e capacita a próxima geração de artistas. Escolha a melhor forma de apoiar."}
                             </p>
                         </div>
 
@@ -386,59 +398,63 @@ export default function Home() {
                         <div className="w-full max-w-md bg-white/10 dark:bg-slate-900/40 backdrop-blur-md border border-white/20 dark:border-slate-700/50 rounded-3xl overflow-hidden shadow-2xl">
 
                             {/* Tabs */}
-                            <div className="flex border-b border-white/10 dark:border-slate-700/50">
-                                {['FIA', 'FMI', 'SCCS'].map((tab) => (
+                            <div className="flex border-b border-white/10 dark:border-slate-700/50 flex-wrap">
+                                {donationsData.map((account) => (
                                     <button
-                                        key={tab}
-                                        onClick={() => setActiveTab(tab)}
-                                        className={`flex-1 py-4 text-sm font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === tab ? 'bg-primary text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
+                                        key={account.id}
+                                        onClick={() => setActiveTab(account.tabName)}
+                                        className={`flex-1 min-w-[33.3%] py-4 text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all duration-300 ${activeTab === account.tabName ? 'bg-primary text-white' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}
                                     >
-                                        {tab}
+                                        {account.tabName}
                                     </button>
                                 ))}
                             </div>
 
                             {/* Detalhes da Conta */}
                             <div className="p-8 md:p-10 text-center flex flex-col items-center">
-                                <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center p-3 mb-6 animate-[fadeIn_0.5s_ease-out] shadow-xl border border-white/20" key={`icon-${activeTab}`}>
-                                    <img
-                                        src={accountsData[activeTab].logo}
-                                        alt={activeTab}
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-
-                                <h3 className="text-xl md:text-2xl font-bold text-white mb-2 animate-[fadeIn_0.5s_ease-out]" key={`title-${activeTab}`}>
-                                    {accountsData[activeTab].title}
-                                </h3>
-                                <p className="text-sm text-slate-300 mb-8 animate-[fadeIn_0.5s_ease-out]" key={`desc-${activeTab}`}>
-                                    {accountsData[activeTab].description}
-                                </p>
-
-                                <div className="w-full space-y-4 text-left border border-white/10 dark:border-slate-700/50 bg-slate-900/50 rounded-2xl p-6 animate-[fadeIn_0.5s_ease-out]" key={`details-${activeTab}`}>
-                                    <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                                        <span className="text-slate-400 text-xs uppercase tracking-wider">Banco</span>
-                                        <span className="text-white font-semibold text-sm">{accountsData[activeTab].banco}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                                        <span className="text-slate-400 text-xs uppercase tracking-wider">Agência</span>
-                                        <span className="text-white font-semibold text-sm">{accountsData[activeTab].agencia}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                                        <span className="text-slate-400 text-xs uppercase tracking-wider">Conta Corrente</span>
-                                        <span className="text-white font-semibold text-sm">{accountsData[activeTab].conta}</span>
-                                    </div>
-                                    <div className={`flex justify-between items-center ${accountsData[activeTab].pix ? 'border-b border-white/10 pb-3' : 'pt-1'}`}>
-                                        <span className="text-slate-400 text-xs uppercase tracking-wider">CNPJ</span>
-                                        <span className="text-white font-semibold text-sm text-right max-w-[150px] truncate" title={accountsData[activeTab].cnpj}>{accountsData[activeTab].cnpj}</span>
-                                    </div>
-                                    {accountsData[activeTab].pix && (
-                                        <div className="flex justify-between items-center pt-1">
-                                            <span className="text-slate-400 text-xs uppercase tracking-wider">Chave PIX</span>
-                                            <span className="text-primary font-bold text-sm tracking-wide">{accountsData[activeTab].pix}</span>
+                                {donationsData.filter(d => d.tabName === activeTab).map((currentAccount) => (
+                                    <React.Fragment key={currentAccount.id}>
+                                        <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center p-3 mb-6 animate-[fadeIn_0.5s_ease-out] shadow-xl border border-white/20">
+                                            <img
+                                                src={currentAccount.logo}
+                                                alt={currentAccount.tabName}
+                                                className="w-full h-full object-contain"
+                                            />
                                         </div>
-                                    )}
-                                </div>
+
+                                        <h3 className="text-xl md:text-2xl font-bold text-white mb-2 animate-[fadeIn_0.5s_ease-out]">
+                                            {currentAccount.title}
+                                        </h3>
+                                        <p className="text-sm text-slate-300 mb-8 animate-[fadeIn_0.5s_ease-out]">
+                                            {currentAccount.description}
+                                        </p>
+
+                                        <div className="w-full space-y-4 text-left border border-white/10 dark:border-slate-700/50 bg-slate-900/50 rounded-2xl p-6 animate-[fadeIn_0.5s_ease-out]">
+                                            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                                <span className="text-slate-400 text-xs uppercase tracking-wider">Banco</span>
+                                                <span className="text-white font-semibold text-sm">{currentAccount.banco}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                                <span className="text-slate-400 text-xs uppercase tracking-wider">Agência</span>
+                                                <span className="text-white font-semibold text-sm">{currentAccount.agencia}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                                                <span className="text-slate-400 text-xs uppercase tracking-wider">Conta Corrente</span>
+                                                <span className="text-white font-semibold text-sm">{currentAccount.conta}</span>
+                                            </div>
+                                            <div className={`flex justify-between items-center ${currentAccount.pix ? 'border-b border-white/10 pb-3' : 'pt-1'}`}>
+                                                <span className="text-slate-400 text-xs uppercase tracking-wider">CNPJ</span>
+                                                <span className="text-white font-semibold text-sm text-right max-w-[150px] truncate" title={currentAccount.cnpj}>{currentAccount.cnpj}</span>
+                                            </div>
+                                            {currentAccount.pix && (
+                                                <div className="flex justify-between items-center pt-1">
+                                                    <span className="text-slate-400 text-xs uppercase tracking-wider">Chave PIX</span>
+                                                    <span className="text-primary font-bold text-sm tracking-wide">{currentAccount.pix}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </React.Fragment>
+                                ))}
                             </div>
                         </div>
                     </div>
@@ -451,27 +467,48 @@ export default function Home() {
                     <div className="flex flex-col">
                         <div className="flex items-center gap-3 mb-6">
                             <img
-                                src="http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
+                                src="/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
                                 alt="SCCS Logo"
                                 className="h-16 w-16 object-contain rounded-full"
                             />
                         </div>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-xs font-normal mb-8">
-                            Transformando vidas através da música e da cultura em nossa comunidade.
+                            {homeSettings.footerText || "Transformando vidas através da música e da cultura em nossa comunidade."}
                         </p>
-
-                        {/* Social Buttons moved here */}
                         <div className="flex gap-4">
-                            <a href="#" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
-                                <span className="material-symbols-outlined text-sm">share</span>
-                            </a>
-                            <a href="#" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
-                                {/* Usando ion-icon ou mdi, mas como o pack atual é material symbols, ajustamos para a câmera que lembra o Insta, e play para YT */}
-                                <span className="material-symbols-outlined text-sm">photo_camera</span>
-                            </a>
-                            <a href="#" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
-                                <span className="material-symbols-outlined text-sm">smart_display</span>
-                            </a>
+                            {homeSettings.socials?.instagram?.active && (
+                                <a href={homeSettings.socials.instagram.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
+                                    <span className="material-symbols-outlined text-sm">photo_camera</span>
+                                </a>
+                            )}
+                            {homeSettings.socials?.youtube?.active && (
+                                <a href={homeSettings.socials.youtube.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
+                                    <span className="material-symbols-outlined text-sm">smart_display</span>
+                                </a>
+                            )}
+                            {homeSettings.socials?.facebook?.active && (
+                                <a href={homeSettings.socials.facebook.link} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all">
+                                    <span className="font-bold text-sm">f</span>
+                                </a>
+                            )}
+                            {homeSettings.socials?.share?.active && (
+                                <button 
+                                    onClick={() => {
+                                        if (navigator.share) {
+                                            navigator.share({
+                                                title: document.title,
+                                                url: window.location.href
+                                            }).catch(() => {});
+                                        } else {
+                                            navigator.clipboard.writeText(window.location.href);
+                                            alert('Link copiado para a área de transferência!');
+                                        }
+                                    }}
+                                    className="flex items-center justify-center w-10 h-10 rounded-full bg-slate-800/80 text-slate-300 hover:bg-primary hover:text-white transition-all"
+                                >
+                                    <span className="material-symbols-outlined text-sm">share</span>
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -490,15 +527,15 @@ export default function Home() {
                         <h4 className="text-slate-100 font-bold mb-2">Contato</h4>
                         <div className="flex items-center gap-3 text-slate-400 text-sm font-normal">
                             <span className="material-symbols-outlined text-primary text-[1rem]">mail</span>
-                            <span>contato@cruzeirodosul.org</span>
+                            <span>{homeSettings.footerEmail || "contato@cruzeirodosul.org"}</span>
                         </div>
                         <div className="flex items-center gap-3 text-slate-400 text-sm font-normal">
                             <span className="material-symbols-outlined text-primary text-[1rem]">call</span>
-                            <span>(11) 4002-8922</span>
+                            <span>{homeSettings.footerPhone || "(48) 3433-0000"}</span>
                         </div>
                         <div className="flex items-center gap-3 text-slate-400 text-sm font-normal">
                             <span className="material-symbols-outlined text-primary text-[1rem]">location_on</span>
-                            <span>Av. Paulista, 1000 - SP</span>
+                            <span>{homeSettings.footerAddress || "Rua Exemplo, 123 - Criciúma, SC"}</span>
                         </div>
                     </div>
 
@@ -506,7 +543,7 @@ export default function Home() {
                     <div className="flex flex-col">
                         <div className="w-full h-48 md:h-full min-h-[150px] rounded-xl overflow-hidden shadow-lg border border-slate-800">
                             <iframe
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.197365672836!2d-46.6564619!3d-23.5613398!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da0aa315%3A0xd59f9431f2c9776a!2sAv.%20Paulista%2C%201000%20-%20Bela%20Vista%2C%20S%C3%A3o%20Paulo%20-%20SP%2C%2001310-100!5e0!3m2!1sen!2sbr!4v1709400000000!5m2!1sen!2sbr"
+                                src={homeSettings.footerMapsUrl || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.197365672836!2d-46.6564619!3d-23.5613398!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da0aa315%3A0xd59f9431f2c9776a!2sAv.%20Paulista%2C%201000%20-%20Bela%20Vista%2C%20S%C3%A3o%20Paulo%20-%20SP%2C%2001310-100!5e0!3m2!1sen!2sbr!4v1709400000000!5m2!1sen!2sbr"}
                                 width="100%"
                                 height="100%"
                                 style={{ border: 0 }}

@@ -1,4 +1,5 @@
 node_modules/
+frontend/node_modules/
 .env
 *.log
 .DS_Store
@@ -6,3 +7,4 @@ Thumbs.db
 dist/
 build/
 .tmp/
+frontend/dist/

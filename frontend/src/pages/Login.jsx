@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import Turnstile from 'react-turnstile';
 import Header from '../components/Header';
 
 export default function Login() {
     const [showPassword, setShowPassword] = useState(false); // false = senha ocuta
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [turnstileToken, setTurnstileToken] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
@@ -14,10 +16,10 @@ export default function Login() {
         setError('');
 
         try {
-            const res = await fetch('http://localhost:5000/api/auth/login', {
+            const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, password, turnstileToken })
             });
 
             if (res.ok) {
@@ -96,12 +98,22 @@ export default function Login() {
                                         aria-label={showPassword ? 'Ocultar senha' : 'Exibir senha'}
                                     >
                                         <span className="material-symbols-outlined select-none text-2xl">
-                                            {/* O usuário pediu: olho aberto para visibility (quando mostrando text) e visibility_off como olho fechado */}
                                             {showPassword ? 'visibility' : 'visibility_off'}
                                         </span>
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Cloudflare Turnstile - Desativado conforme pedido, mantendo código para o futuro
+                            <div className="flex justify-center">
+                                <Turnstile
+                                    sitekey={import.meta.env.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY}
+                                    onVerify={(token) => setTurnstileToken(token)}
+                                    theme="auto"
+                                />
+                            </div>
+                            */}
+
                             <div className="flex items-center justify-between">
                                 <label className="flex items-center gap-2 cursor-pointer group">
                                     <input className="rounded text-primary focus:ring-primary border-slate-300" type="checkbox" />
@@ -109,7 +121,10 @@ export default function Login() {
                                 </label>
                                 <Link className="text-sm font-semibold text-primary hover:underline" to="/login">Esqueceu a senha?</Link>
                             </div>
-                            <button className="w-full bg-primary hover:bg-[#D96D3E] cursor-pointer text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2" type="submit">
+                            <button 
+                                className={`w-full bg-primary hover:bg-[#D96D3E] text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer`} 
+                                type="submit"
+                            >
                                 <span>Entrar</span>
                                 <span className="material-symbols-outlined text-lg">login</span>
                             </button>

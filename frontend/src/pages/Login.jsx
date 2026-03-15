@@ -9,13 +9,29 @@ export default function Login() {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Lógica simples pedida: admin/admin avança
-        if (username === 'admin' && password === 'admin') {
-            navigate('/area-restrita');
-        } else {
-            setError('Usuário ou senha inválidos.');
+        setError('');
+
+        try {
+            const res = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (res.ok) {
+                const userData = await res.json();
+                // Salvar dados do usuário para persistência
+                localStorage.setItem('sccs_user', JSON.stringify(userData));
+                navigate('/area-restrita');
+            } else {
+                const data = await res.json();
+                setError(data.error || 'Erro ao realizar login.');
+            }
+        } catch (err) {
+            console.error(err);
+            setError('Falha na comunicação com o servidor.');
         }
     };
 

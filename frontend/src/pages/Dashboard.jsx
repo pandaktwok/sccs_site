@@ -9,9 +9,22 @@ const Icon = ({ name, size = 20, className = "" }) => (
 
 export default function Dashboard() {
     const navigate = useNavigate();
+    const [currentUser, setCurrentUser] = useState(null);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('Notícias & RSS');
     const [previewImage, setPreviewImage] = useState(null);
+
+    // --- Permissions Logic ---
+    const [previewUserId, setPreviewUserId] = useState(null);
+
+    useEffect(() => {
+        const savedUser = localStorage.getItem('sccs_user');
+        if (!savedUser) {
+            navigate('/login');
+            return;
+        }
+        setCurrentUser(JSON.parse(savedUser));
+    }, [navigate]);
 
     // --- RSS State ---
     const [feeds, setFeeds] = useState([
@@ -30,15 +43,29 @@ export default function Dashboard() {
     ]);
 
     // --- USERS State ---
-    const [users, setUsers] = useState([
-        { id: 1, username: 'admin' },
-        { id: 2, username: 'editor' }
-    ]);
-
-    const [newUser, setNewUser] = useState({ id: null, username: '', password: '', confirmPassword: '' });
+    const [users, setUsers] = useState([]);
+    const [newUser, setNewUser] = useState({ id: null, username: '', password: '', confirmPassword: '', role: 'user', menuAccess: [] });
     const [userError, setUserError] = useState('');
 
-    const handleAddUser = (e) => {
+    const loadUsers = async () => {
+        try {
+            const res = await fetch('http://localhost:5000/api/users');
+            if (res.ok) {
+                const data = await res.json();
+                setUsers(data);
+            }
+        } catch (err) {
+            console.error("Erro ao carregar usuários:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (currentUser?.role === 'admin') {
+            loadUsers();
+        }
+    }, [currentUser]);
+
+    const handleAddUser = async (e) => {
         e.preventDefault();
         setUserError('');
 
@@ -52,33 +79,81 @@ export default function Dashboard() {
             return;
         }
 
-        if (newUser.id) {
-            // Edit
-            setUsers(users.map(u => u.id === newUser.id ? { id: u.id, username: newUser.username } : u));
-        } else {
-            // Check if username already exists
-            if (users.some(u => u.username === newUser.username)) {
-                setUserError('Usuário já existe.');
-                return;
-            }
-            // Create
-            setUsers([...users, { id: Date.now(), username: newUser.username }]);
-        }
+        try {
+            const url = newUser.id ? `http://localhost:5000/api/users/${newUser.id}` : 'http://localhost:5000/api/users';
+            const method = newUser.id ? 'PUT' : 'POST';
 
-        setNewUser({ id: null, username: '', password: '', confirmPassword: '' });
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newUser)
+            });
+
+            if (res.ok) {
+                loadUsers();
+                setNewUser({ id: null, username: '', password: '', confirmPassword: '', role: 'user', menuAccess: [] });
+            } else {
+                const data = await res.json();
+                setUserError(data.error || 'Erro ao salvar usuário.');
+            }
+        } catch (error) {
+            console.error(error);
+            setUserError('Erro de servidor.');
+        }
     };
 
-    const handleRemoveUser = (id) => {
-        if (users.length === 1) {
-            alert("Não é possível remover o último usuário do sistema.");
-            return;
+    const handleRemoveUser = async (id) => {
+        if (!window.confirm("Deseja remover este usuário?")) return;
+        try {
+            const res = await fetch(`http://localhost:5000/api/users/${id}`, { method: 'DELETE' });
+            if (res.ok) loadUsers();
+        } catch (error) {
+            console.error(error);
         }
-        setUsers(users.filter(u => u.id !== id));
     };
 
     const handleEditUser = (user) => {
-        setNewUser({ id: user.id, username: user.username, password: '', confirmPassword: '' });
+        setNewUser({
+            id: user.id,
+            username: user.username,
+            password: '',
+            confirmPassword: '',
+            role: user.role,
+            menuAccess: user.menuAccess || []
+        });
         setUserError('');
+    };
+
+    const togglePermission = (perm) => {
+        const currentPerms = newUser.menuAccess;
+        if (currentPerms.includes(perm)) {
+            setNewUser({ ...newUser, menuAccess: currentPerms.filter(p => p !== perm) });
+        } else {
+            setNewUser({ ...newUser, menuAccess: [...currentPerms, perm] });
+        }
+    };
+
+    const handleToggleUserPermission = async (userId, perm) => {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        
+        const updatedPerms = user.menuAccess.includes(perm)
+            ? user.menuAccess.filter(p => p !== perm)
+            : [...user.menuAccess, perm];
+            
+        try {
+            const res = await fetch(`http://localhost:5000/api/users/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ menuAccess: updatedPerms })
+            });
+            
+            if (res.ok) {
+                setUsers(prev => prev.map(u => u.id === userId ? { ...u, menuAccess: updatedPerms } : u));
+            }
+        } catch (err) {
+            console.error("Erro ao atualizar permissões do usuário:", err);
+        }
     };
 
     // --- EVENTS State ---
@@ -269,16 +344,26 @@ export default function Dashboard() {
     };
 
     const handleLogout = () => {
+        localStorage.removeItem('sccs_user');
         navigate('/login');
     };
 
-    const navItems = [
+    const allNavItems = [
         { name: 'Usuário', icon: <Icon name="person" /> },
         { name: 'Gerir Eventos', icon: <Icon name="calendar_today" /> },
         { name: 'Notícias & RSS', icon: <Icon name="rss_feed" /> },
         { name: 'Banco de Dados', icon: <Icon name="database" /> },
         { name: 'Pagamentos', icon: <Icon name="credit_card" />, href: 'https://pagamentos.sccruzeirodosul.org/' },
     ];
+
+    // Filter items based on user permissions or preview
+    const activeNavItems = (() => {
+        if (previewUserId) {
+            const previewedUser = users.find(u => u.id === previewUserId);
+            return allNavItems.filter(item => (previewedUser?.menuAccess || []).includes(item.name));
+        }
+        return allNavItems.filter(item => (currentUser?.menuAccess || []).includes(item.name));
+    })();
 
     return (
         <div className="flex h-screen bg-background-dark font-display text-slate-100 overflow-hidden">
@@ -289,11 +374,21 @@ export default function Dashboard() {
                         <Icon name="monitoring" size={28} className="text-primary" />
                         Painel<span className="text-primary">SCCS</span>
                     </h2>
-                    <p className="text-slate-500 text-sm mt-2 font-medium">Área Restrita Administrativa</p>
+                    {previewUserId ? (
+                        <div className="mt-2 flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
+                            <Icon name="visibility" size={14} className="text-amber-500" />
+                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-tight">Modo Visualização</span>
+                            <button onClick={() => setPreviewUserId(null)} className="ml-auto text-amber-500 hover:text-amber-400">
+                                <Icon name="close" size={12} />
+                            </button>
+                        </div>
+                    ) : (
+                        <p className="text-slate-500 text-sm mt-2 font-medium">Área Restrita Administrativa</p>
+                    )}
                 </div>
 
                 <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
-                    {navItems.map((item) => (
+                    {activeNavItems.map((item) => (
                         item.href ? (
                             <a
                                 key={item.name}
@@ -320,6 +415,9 @@ export default function Dashboard() {
                             </button>
                         )
                     ))}
+                    {activeNavItems.length === 0 && (
+                        <p className="text-slate-500 text-xs text-center p-4">Sem permissão para nenhum menu.</p>
+                    )}
                 </nav>
 
                 <div className="p-6 border-t border-slate-800">
@@ -348,7 +446,7 @@ export default function Dashboard() {
             {isMobileMenuOpen && (
                 <div className="md:hidden fixed inset-0 z-40 bg-slate-900 pt-20 flex flex-col h-full">
                     <nav className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                        {navItems.map((item) => (
+                        {activeNavItems.map((item) => (
                             item.href ? (
                                 <a
                                     key={item.name}
@@ -359,7 +457,7 @@ export default function Dashboard() {
                                 >
                                     {item.icon}
                                     {item.name}
-                                    <ExternalLink size={18} className="ml-auto opacity-50" />
+                                    <Icon name="open_in_new" size={18} className="ml-auto opacity-50" />
                                 </a>
                             ) : (
                                 <button
@@ -381,7 +479,7 @@ export default function Dashboard() {
                             onClick={handleLogout}
                             className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold rounded-xl text-lg"
                         >
-                            <LogOut size={24} />
+                            <Icon name="logout" size={24} />
                             Sair do Sistema
                         </button>
                     </div>
@@ -393,8 +491,16 @@ export default function Dashboard() {
                 <div className="p-8 md:p-12 max-w-6xl mx-auto h-full flex flex-col">
                     <header className="mb-10">
                         <span className="text-primary font-bold tracking-widest uppercase text-xs">Visão Geral</span>
-                        <h1 className="text-4xl font-extrabold text-white mt-1">Bem-vindo, Admin!</h1>
+                        <h1 className="text-4xl font-extrabold text-white mt-1">Bem-vindo, {currentUser?.username || 'Usuário'}!</h1>
                         <p className="text-slate-400 mt-2 text-lg">Selecione uma opção no menu lateral para visualizar os dados.</p>
+                        {previewUserId && (
+                            <div className="mt-4 p-3 bg-amber-500/20 border border-amber-500/30 rounded-xl flex items-center justify-between">
+                                <span className="text-amber-400 text-sm font-bold flex items-center gap-2">
+                                    <Icon name="visibility" size={18} /> MODO VISUALIZAÇÃO DE MENU ATIVO
+                                </span>
+                                <button onClick={() => setPreviewUserId(null)} className="text-amber-400 hover:text-white underline text-xs font-bold">REAVER MEU MENU</button>
+                            </div>
+                        )}
                     </header>
 
                     {/* Conditional Rendering Content */}
@@ -666,132 +772,212 @@ export default function Dashboard() {
                             </div>
                         </div>
                     ) : activeTab === 'Usuário' ? (
-                        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* --- COLUNA ESQUERDA: LISTA DE USUÁRIOS --- */}
-                            <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-full">
-                                <div className="flex items-center justify-between mb-6">
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
-                                        <Icon name="group" size={20} className="text-primary" /> Usuários do Sistema
-                                    </h2>
-                                    <span className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs font-semibold">{users.length} ativos</span>
-                                </div>
+                        currentUser?.role === 'admin' ? (
+                            <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                {/* --- COLUNA ESQUERDA: LISTA DE USUÁRIOS --- */}
+                                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-full">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-xl font-bold flex items-center gap-2">
+                                            <Icon name="group" size={20} className="text-primary" /> Usuários do Sistema
+                                        </h2>
+                                        <span className="bg-slate-800 text-slate-300 px-3 py-1 rounded-full text-xs font-semibold">{users.length} ativos</span>
+                                    </div>
 
-                                <div className="flex-1 overflow-y-auto space-y-3 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
-                                    {users.map(user => (
-                                        <div key={user.id} className="group bg-slate-800/30 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-4 flex items-center justify-between">
-                                            <div className="flex items-center gap-4 overflow-hidden">
-                                                <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center shrink-0">
-                                                    <Icon name="person" size={18} className="text-slate-300" />
+                                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+                                        {users.map(user => (
+                                            <div key={user.id} className="group flex flex-col bg-slate-800/30 hover:bg-slate-800/80 border border-slate-800 hover:border-slate-700 transition-all rounded-2xl p-4">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4 overflow-hidden">
+                                                        <div className="w-10 h-10 rounded-full bg-slate-700/50 flex items-center justify-center shrink-0">
+                                                            <Icon name="person" size={18} className="text-slate-300" />
+                                                        </div>
+                                                        <div className="flex flex-col truncate">
+                                                            <span className="text-sm font-bold text-slate-200">{user.username}</span>
+                                                            <span className="text-[10px] uppercase font-bold tracking-wider mt-0.5 text-slate-500">{user.role === 'admin' ? 'Administrador' : 'Editor'}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+                                                        <button
+                                                            onClick={() => handleEditUser(user)}
+                                                            className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
+                                                            title="Editar Usuário"
+                                                        >
+                                                            <Icon name="edit" size={16} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleRemoveUser(user.id)}
+                                                            className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                                                            title="Remover Usuário"
+                                                        >
+                                                            <Icon name="delete" size={16} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex flex-col truncate">
-                                                    <span className="text-sm font-bold text-slate-200">{user.username}</span>
-                                                    <span className="text-[10px] uppercase font-bold tracking-wider mt-0.5 text-slate-500">Administrador</span>
+                                                
+                                                {/* Preview & Permission Management Box */}
+                                                <div className="mt-4 pt-3 border-t border-slate-700/50">
+                                                    <label className="flex items-center gap-2 cursor-pointer group mb-3">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={previewUserId === user.id}
+                                                            onChange={(e) => setPreviewUserId(e.target.checked ? user.id : null)}
+                                                            className="w-4 h-4 rounded border-slate-700 bg-slate-900 text-primary focus:ring-primary" 
+                                                        />
+                                                        <span className={`text-xs font-semibold transition-colors ${previewUserId === user.id ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'}`}>Visualizar e gerenciar permissões</span>
+                                                    </label>
+
+                                                    {previewUserId === user.id && (
+                                                        <div className="grid grid-cols-1 gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                                            {allNavItems.map(item => (
+                                                                <label key={item.name} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-900/40 border border-slate-700/30 hover:bg-slate-800/80 transition-all cursor-pointer group">
+                                                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all ${user.menuAccess.includes(item.name) ? 'bg-primary border-primary' : 'border-slate-600 bg-slate-950'}`}>
+                                                                        {user.menuAccess.includes(item.name) && <Icon name="check" size={12} className="text-white" />}
+                                                                    </div>
+                                                                    <input 
+                                                                        type="checkbox" 
+                                                                        checked={user.menuAccess.includes(item.name)} 
+                                                                        onChange={() => handleToggleUserPermission(user.id, item.name)}
+                                                                        className="hidden"
+                                                                    />
+                                                                    <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-200 flex items-center gap-2">
+                                                                        {item.icon} {item.name}
+                                                                    </span>
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-                                                <button
-                                                    onClick={() => handleEditUser(user)}
-                                                    className="p-2 text-slate-500 hover:text-primary hover:bg-primary/10 rounded-lg transition-all"
-                                                    title="Alterar Senha"
-                                                >
-                                                    <Icon name="edit" size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleRemoveUser(user.id)}
-                                                    className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
-                                                    title="Remover Usuário"
-                                                >
-                                                    <Icon name="delete" size={16} />
-                                                </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* --- COLUNA DIREITA: FORMULÁRIO --- */}
+                                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-full">
+                                    <div className="flex items-center mb-6">
+                                        <h2 className="text-xl font-bold flex items-center gap-2">
+                                            <Icon name="person_add" size={20} className="text-primary" /> {newUser.id ? `Editar Usuário: ${newUser.username}` : 'Novo Usuário'}
+                                        </h2>
+                                        {newUser.id && (
+                                            <button
+                                                onClick={() => { setNewUser({ id: null, username: '', password: '', confirmPassword: '', role: 'user', menuAccess: [] }); setUserError(''); }}
+                                                className="ml-auto text-xs text-slate-400 hover:text-white transition-colors"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <form onSubmit={handleAddUser} className="flex flex-col gap-5 overflow-y-auto pr-2 pb-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-700 [&::-webkit-scrollbar-thumb]:rounded-full">
+                                        {userError && (
+                                            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-medium shrink-0">
+                                                <Icon name="error" size={16} /> {userError}
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Nome de Usuário</label>
+                                            <div className="relative">
+                                                <Icon name="person" size={16} className="absolute left-3 top-2.5 text-slate-500" />
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    disabled={!!newUser.id}
+                                                    value={newUser.username}
+                                                    onChange={e => setNewUser({ ...newUser, username: e.target.value })}
+                                                    className={`w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-primary ${newUser.id ? 'text-slate-500 opacity-70 cursor-not-allowed' : 'text-white'}`}
+                                                    placeholder="ex: admin"
+                                                />
                                             </div>
                                         </div>
-                                    ))}
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
+                                                    {newUser.id ? 'Nova Senha' : 'Senha'}
+                                                </label>
+                                                <div className="relative">
+                                                    <Icon name="lock" size={16} className="absolute left-3 top-2.5 text-slate-500" />
+                                                    <input
+                                                        type="password"
+                                                        required={!newUser.id}
+                                                        value={newUser.password}
+                                                        onChange={e => setNewUser({ ...newUser, password: e.target.value })}
+                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                                                        placeholder="••••••••"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Confirmar Senha</label>
+                                                <div className="relative">
+                                                    <Icon name="lock" size={16} className="absolute left-3 top-2.5 text-slate-500" />
+                                                    <input
+                                                        type="password"
+                                                        required={!newUser.id}
+                                                        value={newUser.confirmPassword}
+                                                        onChange={e => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+                                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                                                        placeholder="••••••••"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Papel do Usuário</label>
+                                            <div className="flex gap-4">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="radio" name="role" checked={newUser.role === 'admin'} onChange={() => setNewUser({ ...newUser, role: 'admin' })} className="text-primary bg-slate-900 border-slate-700 focus:ring-primary" />
+                                                    <span className="text-sm font-semibold text-slate-200">Admin</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="radio" name="role" checked={newUser.role === 'user'} onChange={() => setNewUser({ ...newUser, role: 'user' })} className="text-primary bg-slate-900 border-slate-700 focus:ring-primary" />
+                                                    <span className="text-sm font-semibold text-slate-200">Editor</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 block">Acesso ao Menu</label>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {allNavItems.map(item => (
+                                                    <label key={item.name} className="flex items-center gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 transition-colors cursor-pointer group">
+                                                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${newUser.menuAccess.includes(item.name) ? 'bg-primary border-primary' : 'border-slate-600 bg-slate-900'}`}>
+                                                            {newUser.menuAccess.includes(item.name) && <Icon name="check" size={14} className="text-white" />}
+                                                        </div>
+                                                        <input 
+                                                            type="checkbox" 
+                                                            checked={newUser.menuAccess.includes(item.name)} 
+                                                            onChange={() => togglePermission(item.name)}
+                                                            className="hidden"
+                                                        />
+                                                        <span className="text-sm font-semibold text-slate-300 group-hover:text-slate-100 flex items-center gap-2">
+                                                            {item.icon} {item.name}
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 shrink-0">
+                                            <button type="submit" className="w-full bg-primary hover:bg-[#D96D3E] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
+                                                <Icon name="check_circle" size={18} /> {newUser.id ? 'Salvar Mudanças' : 'Cadastrar Usuário'}
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
                             </div>
-
-                            {/* --- COLUNA DIREITA: FORMULÁRIO --- */}
-                            <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-full">
-                                <div className="flex items-center mb-6">
-                                    <h2 className="text-xl font-bold flex items-center gap-2">
-                                        <Icon name="person_add" size={20} className="text-primary" /> {newUser.id ? `Editar Usuário: ${newUser.username}` : 'Novo Usuário'}
-                                    </h2>
-                                    {newUser.id && (
-                                        <button
-                                            onClick={() => { setNewUser({ id: null, username: '', password: '', confirmPassword: '' }); setUserError(''); }}
-                                            className="ml-auto text-xs text-slate-400 hover:text-white transition-colors"
-                                        >
-                                            Cancelar
-                                        </button>
-                                    )}
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-12">
+                                <div className="bg-red-500/10 p-6 rounded-full mb-6">
+                                    <Icon name="lock" size={64} className="text-red-500" />
                                 </div>
-
-                                <form onSubmit={handleAddUser} className="flex flex-col gap-5">
-                                    {userError && (
-                                        <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl flex items-center gap-2 text-sm font-medium">
-                                            <Icon name="error" size={16} /> {userError}
-                                        </div>
-                                    )}
-
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Nome de Usuário</label>
-                                        <div className="relative">
-                                            <Icon name="person" size={16} className="absolute left-3 top-2.5 text-slate-500" />
-                                            <input
-                                                type="text"
-                                                required
-                                                disabled={!!newUser.id}
-                                                value={newUser.username}
-                                                onChange={e => setNewUser({ ...newUser, username: e.target.value })}
-                                                className={`w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:border-primary ${newUser.id ? 'text-slate-500 opacity-70 cursor-not-allowed' : 'text-white'}`}
-                                                placeholder="ex: admin"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">
-                                            {newUser.id ? 'Nova Senha' : 'Senha'}
-                                        </label>
-                                        <div className="relative">
-                                            <Icon name="lock" size={16} className="absolute left-3 top-2.5 text-slate-500" />
-                                            <input
-                                                type="password"
-                                                required
-                                                value={newUser.password}
-                                                onChange={e => setNewUser({ ...newUser, password: e.target.value })}
-                                                className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-primary"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5 block">Confirmar Senha</label>
-                                        <div className="relative">
-                                            <Icon name="lock" size={16} className="absolute left-3 top-2.5 text-slate-500" />
-                                            <input
-                                                type="password"
-                                                required
-                                                value={newUser.confirmPassword}
-                                                onChange={e => setNewUser({ ...newUser, confirmPassword: e.target.value })}
-                                                className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-primary"
-                                                placeholder="••••••••"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4">
-                                        <button type="submit" className="w-full bg-primary hover:bg-[#D96D3E] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors">
-                                            <Icon name="check_circle" size={18} /> {newUser.id ? 'Salvar Nova Senha' : 'Cadastrar Usuário'}
-                                        </button>
-                                    </div>
-
-                                    <p className="text-center text-xs text-slate-500 leading-relaxed mt-2">
-                                        Todos os usuários criados aqui terão privilégios de Administrador e acesso total ao painel.
-                                    </p>
-                                </form>
+                                <h2 className="text-2xl font-bold text-white mb-2">Acesso Restrito</h2>
+                                <p className="text-slate-400 max-w-md">Apenas administradores podem gerenciar usuários e permissões do sistema.</p>
                             </div>
-                        </div>
+                        )
                     ) : activeTab === 'Banco de Dados' ? (
                         <div className="flex-1 flex flex-col gap-6 h-full">
                             <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">

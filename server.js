@@ -160,6 +160,23 @@ const mockNews = [
     }
 ];
 
+let mockUsers = [
+    {
+        id: 1,
+        username: "admin",
+        password: "admin", // Em produção use hashing (bcrypt)
+        role: "admin",
+        menuAccess: ["Usuário", "Gerir Eventos", "Notícias & RSS", "Banco de Dados", "Pagamentos"]
+    },
+    {
+        id: 2,
+        username: "editor",
+        password: "123",
+        role: "user",
+        menuAccess: ["Gerir Eventos", "Notícias & RSS"]
+    }
+];
+
 // --- ROTAS DA API ---
 
 app.get('/api/events', (req, res) => {
@@ -369,8 +386,74 @@ app.post('/api/rss/refresh', async (req, res) => {
     }
 });
 
-// Boilerplates (esqueletos) futuros de backend e integrações DB
-app.post('/api/auth/login', (req, res) => res.status(501).json({ error: "Not Implemented" }));
+// --- AUTHENTICATION ---
+app.post('/api/auth/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = mockUsers.find(u => u.username === username && u.password === password);
+
+    if (user) {
+        // Em um app real, retornaríamos um JWT
+        const { password, ...userWithoutPassword } = user;
+        res.json(userWithoutPassword);
+    } else {
+        res.status(401).json({ error: "Usuário ou senha inválidos" });
+    }
+});
+
+// --- USER MANAGEMENT (Admin Only) ---
+app.get('/api/users', (req, res) => {
+    // Simplificação: retornamos sem senha
+    const users = mockUsers.map(({ password, ...u }) => u);
+    res.json(users);
+});
+
+app.post('/api/users', (req, res) => {
+    const { username, password, role, menuAccess } = req.body;
+    
+    if (!username || !password) {
+        return res.status(400).json({ error: "Username e password são obrigatórios" });
+    }
+
+    if (mockUsers.some(u => u.username === username)) {
+        return res.status(400).json({ error: "Usuário já existe" });
+    }
+
+    const newUser = {
+        id: Date.now(),
+        username,
+        password,
+        role: role || 'user',
+        menuAccess: menuAccess || []
+    };
+
+    mockUsers.push(newUser);
+    const { password: _, ...userWithoutPassword } = newUser;
+    res.status(201).json(userWithoutPassword);
+});
+
+app.put('/api/users/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    const { password, role, menuAccess } = req.body;
+    
+    const index = mockUsers.findIndex(u => u.id === id);
+    if (index === -1) return res.status(404).json({ error: "Usuário não encontrado" });
+
+    if (password) mockUsers[index].password = password;
+    if (role) mockUsers[index].role = role;
+    if (menuAccess) mockUsers[index].menuAccess = menuAccess;
+
+    const { password: _, ...userWithoutPassword } = mockUsers[index];
+    res.json(userWithoutPassword);
+});
+
+app.delete('/api/users/:id', (req, res) => {
+    const id = parseInt(req.params.id);
+    if (mockUsers.length <= 1) return res.status(400).json({ error: "Não é possível remover o último usuário" });
+    
+    mockUsers = mockUsers.filter(u => u.id !== id);
+    res.status(204).send();
+});
+
 app.get('/api/settings', (req, res) => res.status(501).json({ error: "Not Implemented" }));
 
 // --- GERENCIAMENTO DE ARQUIVOS (DATABASE VISUAL) ---

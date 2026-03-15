@@ -151,7 +151,6 @@ export default function Home() {
                     <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/60"></div>
                 </div>
                 <div className="relative z-10 text-center max-w-4xl px-6">
-                    <span className="inline-block px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-xs font-bold uppercase tracking-[0.2em] mb-6 border border-white/20">Tradição & Cultura</span>
                     <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-8 leading-[1.05] tracking-tight">Cultivando Ritmo e Tradição</h1>
                     <p className="text-lg md:text-xl text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
                         Capacitando a comunidade através do poder transformador da educação musical orquestral e folclórica brasileira.
@@ -255,7 +254,7 @@ export default function Home() {
                                                         key={`${i}-${logo.id}`}
                                                         src={logo.url}
                                                         alt={logo.name}
-                                                        className="h-8 md:h-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain"
+                                                        className="h-8 md:h-12 max-w-[120px] md:max-w-[160px] opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all object-contain"
                                                     />
                                                 ))
                                             ) : (
@@ -454,7 +453,7 @@ export default function Home() {
                             <img
                                 src="http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
                                 alt="SCCS Logo"
-                                className="h-16 w-auto object-contain"
+                                className="h-16 w-16 object-contain rounded-full"
                             />
                         </div>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-xs font-normal mb-8">

@@ -53,7 +53,7 @@ export default function Header() {
                     <img
                         src="http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
                         alt="SCCS Logo"
-                        className={`object-contain transition-all duration-300 ${isExpanded ? 'w-12 h-12' : 'w-8 h-8'}`}
+                        className={`object-contain rounded-full transition-all duration-300 ${isExpanded ? 'w-12 h-12' : 'w-8 h-8'}`}
                     />
                     Sociedade Cultural Cruzeiro do Sul
                 </Link>
@@ -63,7 +63,7 @@ export default function Header() {
                     <img
                         src="http://localhost:5000/api/public/file/img_site/logo_uteis/LOGO_SCCS.png"
                         alt="SCCS Logo"
-                        className="w-10 h-10 object-contain"
+                        className="w-10 h-10 object-contain rounded-full"
                     />
                 </Link>
 
